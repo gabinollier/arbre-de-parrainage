@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { instance } from "@viz-js/viz";
 import { generateDot } from "./utils/generateDot";
 import { validateData } from "./utils/validateData";
@@ -11,682 +11,19 @@ import {
   FileText, 
   Download, 
   FileDown, 
-  Edit3, 
   BarChart3, 
   Loader2,
   RotateCcw,
-  Plus,
-  ChevronRight,
-  UsersRound,
-  UserRound,
-  TextAlignStart,
-  Trash,
   Network
 } from "lucide-react";
-
-// TagInput Component
-function TagInput({ 
-  tags, 
-  availableOptions, 
-  onAddTag, 
-  onRemoveTag, 
-  onSelectTag,
-  placeholder = "Ajouter...",
-  createLabel = "Créer"
-}: {
-  tags: string[];
-  availableOptions: string[];
-  onAddTag: (tag: string) => void;
-  onRemoveTag: (tag: string) => void;
-  onSelectTag: (tag: string) => void;
-  placeholder?: string;
-  createLabel?: string;
-}) {
-  const [inputValue, setInputValue] = useState("");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [focusedIndex, setFocusedIndex] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const filteredOptions = availableOptions.filter(option =>
-    option.toLowerCase().includes(inputValue.toLowerCase())
-  );
-
-  // Correction : "Créer" n'apparaît que si la recherche n'est contenue dans aucun nom
-  const shouldShowCreateOption = inputValue.trim() &&
-    !availableOptions.some(option => option.toLowerCase().includes(inputValue.trim().toLowerCase())) &&
-    !tags.includes(inputValue.trim());
-
-  const allOptions = [...filteredOptions];
-  if (shouldShowCreateOption) {
-    allOptions.unshift(`${createLabel} "${inputValue.trim()}"`);
-  }
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-    setIsDropdownOpen(true);
-    setFocusedIndex(0);
-  };
-
-  const handleInputFocus = () => {
-    setIsDropdownOpen(true);
-  };
-
-  const handleInputBlur = () => {
-    // Delay closing to allow clicks on dropdown items
-    setTimeout(() => setIsDropdownOpen(false), 150);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!isDropdownOpen) return;
-
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setFocusedIndex(prev => Math.min(prev + 1, allOptions.length - 1));
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setFocusedIndex(prev => Math.max(prev - 1, 0));
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (allOptions.length > 0) {
-          handleSelectOption(allOptions[focusedIndex]);
-        }
-        break;
-      case 'Escape':
-        setIsDropdownOpen(false);
-        inputRef.current?.blur();
-        break;
-    }
-  };
-
-  const handleSelectOption = (option: string) => {
-    if (option.startsWith(createLabel)) {
-      // Extract the name from "Créer "name""
-      const name = inputValue.trim();
-      onAddTag(name);
-    } else {
-      // Ajout du tag, pas navigation
-      onAddTag(option);
-    }
-    setInputValue("");
-    setIsDropdownOpen(false);
-    setFocusedIndex(0);
-  };
-
-  return (
-    <div className="relative">
-      <div className="flex flex-wrap items-center gap-2 p-2 border border-gray-300 rounded-lg min-h-[44px] focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
-        {tags.map(tag => (
-          <div
-            key={tag}
-            className="flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200 pl-2.5 pr-2 py-1 rounded-md text-sm"
-          >
-            <button
-              onClick={() => onSelectTag(tag)}
-            >
-              {tag}
-            </button>
-            <button
-              onClick={() => onRemoveTag(tag)}
-              className="text-blue-600  hover:text-black transition-colors rounded-md"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-        ))}
-        <input
-          ref={inputRef}
-          type="text"
-          value={inputValue}
-          onChange={handleInputChange}
-          onFocus={handleInputFocus}
-          onBlur={handleInputBlur}
-          onKeyDown={handleKeyDown}
-          className="flex-1 min-w-[120px] outline-none bg-transparent"
-          placeholder={tags.length === 0 ? placeholder : ""}
-        />
-      </div>
-
-      {isDropdownOpen && (
-        <div className="absolute top-full left-0 right-0 z-[1000] mt-1 bg-white border border-gray-200 rounded-md shadow-md max-h-96 overflow-y-auto">
-          {allOptions.length === 0 ? (
-            <div className="px-3 py-2 text-gray-500 text-sm">
-              {inputValue ? "Aucun résultat" : "Sélectionnez ou créez un élément"}
-            </div>
-          ) : (
-            <>
-              {!inputValue && (
-                <div className="px-3 py-2 text-gray-500 text-sm border-b border-gray-100">
-                  Sélectionnez ou créez un élément
-                </div>
-              )}
-              {allOptions.map((option, index) => (
-                <button
-                  key={option}
-                  onClick={() => handleSelectOption(option)}
-                  className={`w-full text-left px-3 py-2 hover:bg-blue-50 transition-colors ${
-                    index === focusedIndex ? 'bg-blue-50' : ''
-                  } ${option.startsWith(createLabel) ? 'text-green-600 font-medium' : ''}`}
-                >
-                  {option}
-                </button>
-              ))}
-            </>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Types
-interface Person {
-  children: string[];
-  title?: string;
-}
-
-interface Generation {
-  [name: string]: Person;
-}
-
-interface FamilyData {
-  first_year: number;
-  children_tree: Generation[];
-}
-
-// Modal Component
-function Modal({ isOpen, onClose, title, children }: {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  children: React.ReactNode;
-}) {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-xl bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-96 max-w-90vw">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">{title}</h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-// Add Person Modal Component
-function AddPersonModal({ isOpen, onClose, onAdd, defaultName = "" }: {
-  isOpen: boolean;
-  onClose: () => void;
-  onAdd: (name: string, title: string) => void;
-  defaultName?: string;
-}) {
-  const [name, setName] = useState(defaultName);
-  const [title, setTitle] = useState("");
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (name.trim()) {
-      onAdd(name.trim(), title.trim());
-      setName("");
-      setTitle("");
-      onClose();
-    }
-  };
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Ajouter une personne">
-      <form onSubmit={handleSubmit}>
-        <div className="mb-3">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Nom
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Nom de la personne"
-            required
-          />
-        </div>
-        <div className="mb-5">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Rôle (optionnel)
-          </label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Resp, Trésorier, ..."
-          />
-        </div>
-        <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
-          >
-            Annuler
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Ajouter
-          </button>
-        </div>
-      </form>
-    </Modal>
-  );
-}
-
-// Generations Panel Component
-function GenerationsPanel({ data, selectedGeneration, onSelectGeneration, onAddGeneration }: {
-  data: FamilyData;
-  selectedGeneration: number | null;
-  onSelectGeneration: (index: number) => void;
-  onAddGeneration: () => void;
-}) {
-  return (
-    <div className="w-1/4 bg-gray-50 border-r border-gray-200 flex flex-col">
-      <div className="p-2 border-b border-gray-200 shadow-md bg-white">
-        <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-          <TextAlignStart className="w-5 h-5" />
-          Générations
-        </h3>
-      </div>
-      
-      <div className="flex-1 overflow-y-auto">
-        {data.children_tree.map((generation, index) => {
-          const year = data.first_year + index;
-          const memberCount = Object.keys(generation).length;
-          
-          return (
-            <button
-              key={index}
-              onClick={() => onSelectGeneration(index)}
-              className={`w-full px-4 py-2 text-left border-b border-gray-200 hover:bg-blue-50 transition-colors ${
-                selectedGeneration === index ? 'bg-blue-100 border-l-4 border-l-blue-500' : ''
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-gray-900">
-                    Génération {index + 1}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {year} • <span className={`${memberCount === 0 ? 'text-red-600 font-bold' : ''}`}>{memberCount} membre{memberCount !== 1 ? 's' : ''}</span>
-                  </div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-gray-400" />
-              </div>
-            </button>
-          );
-        })}
-        {/* Bouton déplacé à la fin de la liste scrollable */}
-        <div className="p-4">
-          <button
-            onClick={onAddGeneration}
-            className="w-full flex items-center justify-center gap-2 p-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Ajouter une génération
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Generation Members Panel Component
-function GenerationMembersPanel({ 
-  generation, 
-  generationIndex, 
-  selectedPerson, 
-  onSelectPerson, 
-  onAddPerson 
-}: {
-  generation: Generation | null;
-  generationIndex: number | null;
-  selectedPerson: string | null;
-  onSelectPerson: (name: string) => void;
-  onAddPerson: () => void;
-}) {
-  if (!generation || generationIndex === null) {
-    return (
-      <div className="w-1/4 bg-white border-r border-gray-200 flex items-center justify-center">
-        <div className="text-center text-gray-500">
-          <TextAlignStart className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-          <p className="text-sm">Sélectionnez une génération</p>
-        </div>
-      </div>
-    );
-  }
-
-  const members = Object.entries(generation);
-
-  return (
-    <div className="w-1/4 bg-white border-r border-gray-200 flex flex-col">
-      <div className="p-2 border-b border-gray-200 flex flex-row justify-between items-center shadow-md bg-white">
-        <h3 className="text-lg font-semibold text-gray-800">
-          <UsersRound className="w-5 h-5 inline-block mr-1" />
-          Génération {generationIndex + 1}
-        </h3>
-        {members.length === 0 && 
-        (
-          <button className="px-3 py-1 rounded-xl bg-red-100 hover:bg-red-200 text-red-600 flex flex-row items-center gap-1 text-sm"
-            title="Cette génération ne contient aucun membre. Vous pouvez la supprimer si vous le souhaitez."
-            >
-            <Trash className="w-4 h-4" />
-            Supprimer
-          </button>
-        )}
-      </div>
-      
-      <div className="flex-1 overflow-y-auto">
-        {members.map(([name, person]) => (
-          <button
-            key={name}
-            onClick={() => onSelectPerson(name)}
-            className={`w-full px-4 py-2 text-left border-b border-gray-200 hover:bg-blue-50 transition-colors ${
-              selectedPerson === name ? 'bg-blue-100 border-l-4 border-l-blue-500' : ''
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-medium text-gray-900">{name}</div>
-                  <div className="text-xs text-gray-500">
-                    {person.title && <span>{person.title} • </span>}
-                    {`${person.children.length} enfant${person.children.length !== 1 ? 's' : ''}`}
-                  </div>
-              </div>
-            </div>
-          </button>
-        ))}
-
-        <div className="p-4 ">
-          <button
-            onClick={onAddPerson}
-            className="w-full flex items-center justify-center gap-2 p-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Ajouter une personne
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Person Editor Panel Component
-function PersonEditorPanel({ 
-  data,
-  generationIndex,
-  personName,
-  onDataChange,
-  onSelectPerson
-}: {
-  data: FamilyData;
-  generationIndex: number | null;
-  personName: string | null;
-  onDataChange: (newData: FamilyData) => void;
-  onSelectPerson: (generationIndex: number | null, personName: string | null) => void;
-}) {
-
-
-  if (!data || generationIndex === null || !personName) {
-    return (
-      <div className="flex-1 bg-white flex items-center justify-center">
-        <div className="text-center text-gray-500">
-          <Edit3 className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-          <p className="text-sm">Sélectionnez une personne à éditer</p>
-        </div>
-      </div>
-    );
-  }
-
-  const person = data.children_tree[generationIndex]?.[personName];
-  if (!person) return null;
-
-  // Helper functions
-  const updatePersonName = (oldName: string, newName: string) => {
-    if (oldName === newName) return;
-    
-    const newData = { ...data };
-    
-    // Update in current generation
-    const generation = { ...newData.children_tree[generationIndex] };
-    const personData = generation[oldName];
-    delete generation[oldName];
-    generation[newName] = personData;
-    newData.children_tree[generationIndex] = generation;
-    
-    // Update in all parents' children arrays
-    for (let i = 0; i < newData.children_tree.length; i++) {
-      const gen = { ...newData.children_tree[i] };
-      let changed = false;
-      
-      for (const [parentName, parentData] of Object.entries(gen)) {
-        const childrenIndex = parentData.children.indexOf(oldName);
-        if (childrenIndex !== -1) {
-          gen[parentName] = {
-            ...parentData,
-            children: parentData.children.map(child => child === oldName ? newName : child)
-          };
-          changed = true;
-        }
-      }
-      
-      if (changed) {
-        newData.children_tree[i] = gen;
-      }
-    }
-    
-    onDataChange(newData);
-  };
-
-  const updatePersonTitle = (title: string) => {
-    const newData = { ...data };
-    const generation = { ...newData.children_tree[generationIndex] };
-    generation[personName] = {
-      ...person,
-      title: title || undefined
-    };
-    newData.children_tree[generationIndex] = generation;
-    onDataChange(newData);
-  };
-
-  const removeChild = (childName: string) => {
-    const newData = { ...data };
-    const generation = { ...newData.children_tree[generationIndex] };
-    generation[personName] = {
-      ...person,
-      children: person.children.filter(child => child !== childName)
-    };
-    newData.children_tree[generationIndex] = generation;
-    onDataChange(newData);
-  };
-
-  const addChild = (childName: string) => {
-    if (person.children.includes(childName)) return;
-    
-    const newData = { ...data };
-    const generation = { ...newData.children_tree[generationIndex] };
-    generation[personName] = {
-      ...person,
-      children: [...person.children, childName]
-    };
-    newData.children_tree[generationIndex] = generation;
-    onDataChange(newData);
-  };
+import { FamilyData, } from "../types/familyTree";
+import GenerationsPanel from "../components/GenerationsPanel";
+import GenerationPanel from "../components/GenerationPanel";
+import AddPersonModal from "@/components/modals/AddPersonModal";
+import PersonPanel from "../components/PersonPanel";
 
 
 
-  // Get available children (next generation)
-  const nextGeneration = data.children_tree[generationIndex + 1] || {};
-  const availableChildren = Object.keys(nextGeneration).filter(name => 
-    !person.children.includes(name)
-  );
-
-  // Get available parents (previous generation)
-  const prevGeneration = generationIndex > 0 ? data.children_tree[generationIndex - 1] || {} : {};
-  const currentParents = Object.entries(prevGeneration)
-    .filter(([_, parentData]) => parentData.children.includes(personName))
-    .map(([name]) => name);
-  
-  const availableParents = Object.keys(prevGeneration).filter(name => 
-    !currentParents.includes(name)
-  );
-
-  const removeParent = (parentName: string) => {
-    const newData = { ...data };
-    const prevGen = { ...newData.children_tree[generationIndex - 1] };
-    prevGen[parentName] = {
-      ...prevGen[parentName],
-      children: prevGen[parentName].children.filter(child => child !== personName)
-    };
-    newData.children_tree[generationIndex - 1] = prevGen;
-    onDataChange(newData);
-  };
-
-  const addParent = (parentName: string) => {
-    const newData = { ...data };
-    const prevGen = { ...newData.children_tree[generationIndex - 1] };
-    prevGen[parentName] = {
-      ...prevGen[parentName],
-      children: [...prevGen[parentName].children, personName]
-    };
-    newData.children_tree[generationIndex - 1] = prevGen;
-    onDataChange(newData);
-  };
-
-
-
-  return (
-    <div className="flex-1 bg-white">
-
-      <div className="border-b border-gray-200 py-2 px-2 flex items-center justify-between mb-4 shadow-md bg-white">
-        <h3 className="text-lg font-semibold text-gray-800">
-          <UserRound className="w-5 h-5 inline-block mr-1" />
-          Édition de {personName}
-        </h3>
-        <button
-          onClick={() => onSelectPerson(generationIndex, null)}
-          className="text-gray-600 hover:text-gray-800 focus:outline-none"
-        >
-          <X className="w-5 h-5" />
-        </button>
-      </div>
-      
-      <div className="px-4 h-full">
-        {/* Name and Title Fields - Same Line */}
-        <div className="mb-3 grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nom
-            </label>
-            <input
-              type="text"
-              value={personName}
-              onChange={(e) => updatePersonName(personName, e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Rôle (optionnel)
-            </label>
-            <input
-              type="text"
-              value={person.title || ""}
-              onChange={(e) => updatePersonTitle(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Resp, Trésorier, ..."
-            />
-          </div>
-        </div>
-
-        {/* Parents Field (not for first generation) */}
-        {generationIndex > 0 && (
-          <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Parents
-            </label>
-            <TagInput
-              tags={currentParents}
-              availableOptions={availableParents}
-              onAddTag={(name) => {
-                const newData = { ...data };
-                const prevGeneration = { ...newData.children_tree[generationIndex - 1] };
-                // Si la personne existe déjà, on conserve ses données
-                const existingParent = prevGeneration[name];
-                prevGeneration[name] = {
-                  ...(existingParent || { children: [] }),
-                  children: [...((existingParent && existingParent.children) || []), personName]
-                };
-                newData.children_tree[generationIndex - 1] = prevGeneration;
-                onDataChange(newData);
-              }}
-              onRemoveTag={removeParent}
-              onSelectTag={(parentName) => onSelectPerson(generationIndex - 1, parentName)}
-              placeholder="Ajouter un parent..."
-              createLabel="Créer"
-            />
-          </div>
-        )}
-
-        {/* Children Field */}
-        <div className="mb-3">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Enfants
-          </label>
-          <TagInput
-            tags={person.children}
-            availableOptions={availableChildren}
-            onAddTag={(name) => {
-              const newData = { ...data };
-              // Ensure next generation exists
-              const nextGenIndex = generationIndex + 1;
-              while (newData.children_tree.length <= nextGenIndex) {
-                newData.children_tree.push({});
-              }
-              // Ajout ou conservation des données existantes
-              const nextGeneration = { ...newData.children_tree[nextGenIndex] };
-              const existingChild = nextGeneration[name];
-              nextGeneration[name] = existingChild || { children: [] };
-              newData.children_tree[nextGenIndex] = nextGeneration;
-              // Ajout dans la liste des enfants
-              const currentGeneration = { ...newData.children_tree[generationIndex] };
-              currentGeneration[personName] = {
-                ...person,
-                children: [...person.children, name]
-              };
-              newData.children_tree[generationIndex] = currentGeneration;
-              onDataChange(newData);
-            }}
-            onRemoveTag={removeChild}
-            onSelectTag={(childName) => onSelectPerson(generationIndex + 1, childName)}
-            placeholder="Ajouter un enfant..."
-            createLabel="Créer"
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Main Family Tree Editor Component
 function FamilyTreeEditor({ data, onDataChange }: {
   data: FamilyData;
   onDataChange: (newData: FamilyData) => void;
@@ -737,15 +74,20 @@ function FamilyTreeEditor({ data, onDataChange }: {
         onAddGeneration={handleAddGeneration}
       />
       
-      <GenerationMembersPanel
+      <GenerationPanel
         generation={currentGeneration}
         generationIndex={selectedGeneration}
         selectedPerson={selectedPerson}
         onSelectPerson={setSelectedPerson}
         onAddPerson={() => setShowAddPersonModal(true)}
+        onDeleteGeneration={(index) => {
+          const newData = { ...data };
+          newData.children_tree.splice(index, 1);
+          onDataChange(newData);
+        }}
       />
       
-      <PersonEditorPanel
+      <PersonPanel
         data={data}
         generationIndex={selectedGeneration}
         personName={selectedPerson}
@@ -774,9 +116,12 @@ export default function Home() {
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
+  const [topPanelHeight, setTopPanelHeight] = useState(60); // Percentage
+  const [isResizing, setIsResizing] = useState(false);
   const graphRef = useRef<HTMLDivElement>(null);
   const graphContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -983,6 +328,28 @@ export default function Home() {
     setPan({ x: 0, y: 0 });
   };
 
+  // Handle resize start
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  }, []);
+
+  // Handle resize
+  const handleResize = useCallback((e: MouseEvent) => {
+    if (!isResizing || !containerRef.current) return;
+
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const relativeY = e.clientY - containerRect.top;
+    const newTopPanelHeight = Math.min(Math.max((relativeY / containerRect.height) * 100, 20), 80);
+    
+    setTopPanelHeight(newTopPanelHeight);
+  }, [isResizing]);
+
+  // Handle resize end
+  const handleResizeEnd = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
   // Auto-render graph when dotInput changes and data is valid
   useEffect(() => {
     if (isValidData && dotInput) {
@@ -993,46 +360,53 @@ export default function Home() {
     }
   }, [dotInput, isValidData, isInitialLoad]);
 
-  // Global mouse event listeners for smoother dragging
+  // Global mouse event listeners for smoother dragging and resizing
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-      
-      const deltaX = e.clientX - lastMousePos.x;
-      const deltaY = e.clientY - lastMousePos.y;
-      
-      setPan(prev => ({
-        x: prev.x + deltaX,
-        y: prev.y + deltaY
-      }));
-      
-      setLastMousePos({ x: e.clientX, y: e.clientY });
-      
-      // Force SVG re-render during drag to prevent pixelization
-      if (graphRef.current) {
-        const svgElement = graphRef.current.querySelector('svg');
-        if (svgElement) {
-          svgElement.style.transform = 'translateZ(0)'; // Force hardware acceleration
+      if (isDragging) {
+        const deltaX = e.clientX - lastMousePos.x;
+        const deltaY = e.clientY - lastMousePos.y;
+        
+        setPan(prev => ({
+          x: prev.x + deltaX,
+          y: prev.y + deltaY
+        }));
+        
+        setLastMousePos({ x: e.clientX, y: e.clientY });
+        
+        // Force SVG re-render during drag to prevent pixelization
+        if (graphRef.current) {
+          const svgElement = graphRef.current.querySelector('svg');
+          if (svgElement) {
+            svgElement.style.transform = 'translateZ(0)'; // Force hardware acceleration
+          }
         }
+      } else if (isResizing) {
+        handleResize(e);
       }
     };
 
     const handleMouseUp = () => {
       setIsDragging(false);
+      handleResizeEnd();
     };
 
-    if (isDragging) {
+    if (isDragging || isResizing) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
-      document.body.style.userSelect = 'none'; // Prevent text selection while dragging
+      document.body.style.userSelect = 'none'; // Prevent text selection while dragging/resizing
+      if (isResizing) {
+        document.body.style.cursor = 'ns-resize';
+      }
     }
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
       document.body.style.userSelect = '';
+      document.body.style.cursor = '';
     };
-  }, [isDragging, lastMousePos]);
+  }, [isDragging, lastMousePos, isResizing, handleResize, handleResizeEnd]);
 
   // File upload view - shown when no valid data is loaded
   if (!isValidData) {
@@ -1131,19 +505,34 @@ export default function Home() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex flex-col h-[calc(100vh-80px)]">
+      <div ref={containerRef} className="flex flex-col h-[calc(100vh-80px)]">
         {/* Top Panel - Data Editor */}
-        <div className="h-3/5 bg-white border-b border-gray-200">
+        <div 
+          className="bg-white border-b border-gray-200"
+          style={{ height: `${topPanelHeight}%` }}
+        >
           <FamilyTreeEditor 
             data={uploadedData}
             onDataChange={handleDataChange}
           />
         </div>
 
+        {/* Resize Handle */}
+        <div
+          className="h-6 -my-2 bg-transparent cursor-ns-resize flex items-center justify-center"
+          onMouseDown={handleResizeStart}
+          title="Glisser pour redimensionner"
+        >
+          <div className="h-1 w-full bg-gray-100 "></div>
+        </div>
+
         {/* Bottom Panel - Graph Preview */}
-        <div className="h-2/5 bg-gray-50 flex flex-col">
+        <div 
+          className="bg-gray-50 flex flex-col"
+          style={{ height: `${100 - topPanelHeight}%` }}
+        >
           {/* Title bar */}
-          <div className="bg-white px-6 py-2 flex items-center justify-between shadow-md">
+          <div className="bg-white px-6 py-2 flex items-center justify-between shadow-md z-100">
             <h2 className="text-lg font-semibold text-gray-800">
               <Network className="w-5 h-5 inline-block mr-1" />
               Aperçu du graphique

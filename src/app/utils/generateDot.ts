@@ -1,5 +1,5 @@
-import { PersonData, ChildrenTree } from "../types/familyTree";
-import { Person } from "../types/Person";
+import { PersonData, ChildrenTree } from "../../types/familyTree";
+import { Person } from "../../types/Person";
 import { getFrenchOrdinalName } from "./frenchUtils";
 import { isLightColor } from "./colorUtils";
 
