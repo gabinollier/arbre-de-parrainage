@@ -3,14 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { instance as createVizInstance } from "@viz-js/viz";
 import { BarChart3, Loader2, Network, RotateCcw } from "lucide-react";
+import { useData } from "../context/DataContext";
 
-interface FamilyTreePreviewProps {
-  dotInput: string;
-  shouldAutoFit: boolean;
-  onAutoFitComplete: () => void;
-}
-
-export default function FamilyTreePreview({ dotInput, shouldAutoFit, onAutoFitComplete }: FamilyTreePreviewProps) {
+export default function FamilyTreePreview() {
+  const { dot, isInitialLoad, setIsInitialLoad } = useData();
   const [isLoading, setIsLoading] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -22,7 +18,7 @@ export default function FamilyTreePreview({ dotInput, shouldAutoFit, onAutoFitCo
 
   const renderGraph = useCallback(
     async (resetZoom: boolean) => {
-      if (!dotInput) {
+      if (!dot) {
         return;
       }
 
@@ -30,7 +26,7 @@ export default function FamilyTreePreview({ dotInput, shouldAutoFit, onAutoFitCo
 
       try {
         const viz = await createVizInstance();
-        const element = await viz.renderSVGElement(dotInput);
+        const element = await viz.renderSVGElement(dot);
 
         if (!graphRef.current) {
           return;
@@ -75,20 +71,20 @@ export default function FamilyTreePreview({ dotInput, shouldAutoFit, onAutoFitCo
         setIsLoading(false);
       }
     },
-    [dotInput]
+    [dot]
   );
 
   useEffect(() => {
-    if (!dotInput) {
+    if (!dot) {
       return;
     }
 
     let cancelled = false;
 
     const run = async () => {
-      await renderGraph(shouldAutoFit);
-      if (!cancelled && shouldAutoFit) {
-        onAutoFitComplete();
+      await renderGraph(isInitialLoad);
+      if (!cancelled && isInitialLoad) {
+        setIsInitialLoad(false);
       }
     };
 
@@ -97,7 +93,7 @@ export default function FamilyTreePreview({ dotInput, shouldAutoFit, onAutoFitCo
     return () => {
       cancelled = true;
     };
-  }, [dotInput, shouldAutoFit, onAutoFitComplete, renderGraph]);
+  }, [dot, isInitialLoad, setIsInitialLoad, renderGraph]);
 
   const handleWheel = useCallback(
     (event: React.WheelEvent) => {
@@ -263,7 +259,7 @@ export default function FamilyTreePreview({ dotInput, shouldAutoFit, onAutoFitCo
       </div>
 
       <div className="flex-1 bg-white overflow-hidden relative">
-        {!dotInput && (
+        {!dot && (
           <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-center">
             <div>
               <BarChart3 className="w-16 h-16 mx-auto mb-4 text-gray-200" />
@@ -294,9 +290,9 @@ export default function FamilyTreePreview({ dotInput, shouldAutoFit, onAutoFitCo
           />
         </div>
 
-        {dotInput && zoomControls}
+        {dot && zoomControls}
 
-        {dotInput && (
+        {dot && (
           <div className="absolute bottom-4 right-4 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs">
             {Math.round(zoom * 100)}%
           </div>

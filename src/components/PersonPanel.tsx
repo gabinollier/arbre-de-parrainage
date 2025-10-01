@@ -2,13 +2,16 @@ import { FamilyData } from "@/types/familyTree";
 import { Edit3, Trash, UserRound, X } from "lucide-react";
 import TagInput from "./TagInput";
 import { useState } from "react";
+import { isNameValid } from "@/utils/NameChecker";
+import DeletePersonModal from "./modals/DeletePersonModal";
+import { useData } from "@/context/DataContext";
 
 export default function PersonPanel({ 
   data,
   generationIndex,
   personName,
   onDataChange,
-  onSelectPerson
+  onSelectPerson,
 }: {
   data: FamilyData;
   generationIndex: number | null;
@@ -17,7 +20,51 @@ export default function PersonPanel({
   onSelectPerson: (generationIndex: number | null, personName: string | null) => void;
 }) {
 
-  const [isNameError, setIsNameError] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [draftName, setDraftName] = useState(personName || "");
+  const [previousPersonName, setPreviousPersonName] = useState(personName);
+  const [showDeletePersonModal, setShowDeletePersonModal] = useState(false);
+
+  const { setFamilyData, familyData } = useData();
+
+  const handleDeletePerson = (personName: string, generationIndex: number) => {
+    setFamilyData((previous) => {
+      if (!previous) {
+        return previous;
+      }
+      const newTree = [...previous.children_tree];
+
+      // Remove person from their generation
+      const newGeneration = { ...newTree[generationIndex] };
+      delete newGeneration[personName];
+      newTree[generationIndex] = newGeneration;
+
+      // Remove references from parents in the above generation
+      const newAboveGeneration = generationIndex > 0 ? { ...newTree[generationIndex - 1] } : null;
+      if (newAboveGeneration) {
+        for (const parentName in newAboveGeneration) {
+          newAboveGeneration[parentName] = {
+            ...newAboveGeneration[parentName],
+            children: newAboveGeneration[parentName].children.filter(child => child !== personName)
+          };
+        }
+        newTree[generationIndex - 1] = newAboveGeneration;
+      }
+      return {
+        ...previous,
+        children_tree: newTree,
+      };
+    });
+    setShowDeletePersonModal(false);
+  };
+
+  if (previousPersonName !== personName) {
+    setPreviousPersonName(personName);
+    setDraftName(personName || "");
+    setNameError(null);
+  }
+
+
 
   if (!data || generationIndex === null || personName == null) {
     return (
@@ -32,6 +79,8 @@ export default function PersonPanel({
 
   const person = data.children_tree[generationIndex]?.[personName];
   if (!person) return null;
+
+
 
   // Helper functions
   const updatePersonName = (oldName: string, newName: string) => {
@@ -148,148 +197,152 @@ export default function PersonPanel({
 
 
   return (
-    <div className="flex-1 bg-white">
+    <>
+      <div className="flex-1 bg-white">
 
-      <div className="border-b border-gray-200 py-2 px-2 flex items-center justify-between mb-4 shadow-md bg-white">
-        <h3 className="text-lg font-semibold text-gray-800">
-          <UserRound className="w-5 h-5 inline-block mr-2" />
-          Édition de {personName}
-        </h3>
-        <div className="flex flex-row items-center mr-1">
-          <button
-              className="px-3 py-1 rounded-xl text-red-600 hover:text-red-800 text-sm"
-              title="Cette génération ne contient aucun membre. Vous pouvez la supprimer si vous le souhaitez."
+        <div className="border-b border-gray-200 py-2 px-2 flex items-center justify-between mb-4 shadow-md bg-white">
+          <h3 className="text-lg font-semibold text-gray-800">
+            <UserRound className="w-5 h-5 inline-block mr-2" />
+            Édition de {personName}
+          </h3>
+          <div className="flex flex-row items-center mr-1">
+            <button
+                className="px-3 py-1 rounded-xl text-red-600 hover:text-red-800 text-sm"
+                title="Supprimer cette personne et toutes ses références"
+                onClick={() => setShowDeletePersonModal(true)}
+              >
+                <Trash className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => onSelectPerson(generationIndex, null)}
+              className="text-gray-600 hover:text-gray-800 focus:outline-none"
             >
-              <Trash className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => onSelectPerson(generationIndex, null)}
-            className="text-gray-600 hover:text-gray-800 focus:outline-none"
-          >
-            <X className="w-5 h-5" />
-          </button>
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
-      </div>
-      
-      <div className="px-4 h-full">
-        {/* Name and Title Fields - Same Line */}
-        <div className="mb-3 grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nom
-            </label>
-            <input
-              type="text"
-              value={personName}
-              onChange={
-                (e) => {
-                  // C'EST COMPLETEMENT CASSE
+        
+        <div className="px-4 h-full">
+          {/* Name and Title Fields - Same Line */}
+          <div className="mb-3 grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nom
+              </label>
+              <input
+                type="text"
+                value={draftName}
+                onChange={(e) => {
+                  setDraftName(e.target.value);
 
-                  updatePersonName(personName, e.target.value);
+                  const { valid, error } = isNameValid(e.target.value, Object.keys(data.children_tree[generationIndex]));
 
-                  if (e.target.value.trim() == "" 
-                  || e.target.value.includes(",") 
-                  || e.target.value.includes(";" )
-                  || e.target.value.includes(":")
-                  || e.target.value.includes("\"")
-                  || e.target.value.includes("\'")
-                  || e.target.value.includes("\\")
-                  || e.target.value.includes("{")
-                  || e.target.value.includes("}")
-                  || e.target.value.includes("[")
-                  || e.target.value.includes("]")
-                  || e.target.value.includes("<")
-                  || e.target.value.includes(">")
-                  ) {
-                    setIsNameError(true);
+                  if (!valid)
+                  {
+                    setNameError(error || "Nom invalide." );
                   } else {
-                    setIsNameError(false);
+                    setNameError(null);
                     onSelectPerson(generationIndex, e.target.value);
+                    updatePersonName(personName, e.target.value);
                   }
-                }
-              }
-              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+                }}
+                className={`w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${nameError ? 'border-red-500 focus:ring-red-500' : ''}`}
+              />
+              {nameError && (
+                <p className="text-xs text-red-600 mt-1">
+                  {nameError}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Rôle (optionnel)
+              </label>
+              <input
+                type="text"
+                value={person.title || ""}
+                onChange={(e) => updatePersonTitle(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Resp, Trésorier, ..."
+              />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Rôle (optionnel)
-            </label>
-            <input
-              type="text"
-              value={person.title || ""}
-              onChange={(e) => updatePersonTitle(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Resp, Trésorier, ..."
-            />
-          </div>
-        </div>
 
-        {/* Parents Field (not for first generation) */}
-        {generationIndex > 0 && (
+          {/* Parents Field (not for first generation) */}
+          {generationIndex > 0 && (
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Parrains • Marraines
+              </label>
+              <TagInput
+                tags={currentParents}
+                availableOptions={availableParents}
+                onAddTag={(name) => {
+                  const newData = { ...data };
+                  const prevGeneration = { ...newData.children_tree[generationIndex - 1] };
+                  // Si la personne existe déjà, on conserve ses données
+                  const existingParent = prevGeneration[name];
+                  prevGeneration[name] = {
+                    ...(existingParent || { children: [] }),
+                    children: [...((existingParent && existingParent.children) || []), personName]
+                  };
+                  newData.children_tree[generationIndex - 1] = prevGeneration;
+                  onDataChange(newData);
+                }}
+                onRemoveTag={removeParent}
+                onSelectTag={(parentName) => onSelectPerson(generationIndex - 1, parentName)}
+                placeholder="Ajouter un parrain..."
+                createLabel="Créer"
+              />
+            </div>
+          )}
+
+          {/* Children Field */}
           <div className="mb-3">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Parrains • Marraines
+              Bizs
             </label>
             <TagInput
-              tags={currentParents}
-              availableOptions={availableParents}
+              tags={person.children}
+              availableOptions={availableChildren}
               onAddTag={(name) => {
                 const newData = { ...data };
-                const prevGeneration = { ...newData.children_tree[generationIndex - 1] };
-                // Si la personne existe déjà, on conserve ses données
-                const existingParent = prevGeneration[name];
-                prevGeneration[name] = {
-                  ...(existingParent || { children: [] }),
-                  children: [...((existingParent && existingParent.children) || []), personName]
+                // Ensure next generation exists
+                const nextGenIndex = generationIndex + 1;
+                while (newData.children_tree.length <= nextGenIndex) {
+                  newData.children_tree.push({});
+                }
+                // Ajout ou conservation des données existantes
+                const nextGeneration = { ...newData.children_tree[nextGenIndex] };
+                const existingChild = nextGeneration[name];
+                nextGeneration[name] = existingChild || { children: [] };
+                newData.children_tree[nextGenIndex] = nextGeneration;
+                // Ajout dans la liste des enfants
+                const currentGeneration = { ...newData.children_tree[generationIndex] };
+                currentGeneration[personName] = {
+                  ...person,
+                  children: [...person.children, name]
                 };
-                newData.children_tree[generationIndex - 1] = prevGeneration;
+                newData.children_tree[generationIndex] = currentGeneration;
                 onDataChange(newData);
               }}
-              onRemoveTag={removeParent}
-              onSelectTag={(parentName) => onSelectPerson(generationIndex - 1, parentName)}
-              placeholder="Ajouter un parrain..."
+              onRemoveTag={removeChild}
+              onSelectTag={(childName) => onSelectPerson(generationIndex + 1, childName)}
+              placeholder="Ajouter un biz..."
               createLabel="Créer"
             />
           </div>
-        )}
-
-        {/* Children Field */}
-        <div className="mb-3">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Bizs
-          </label>
-          <TagInput
-            tags={person.children}
-            availableOptions={availableChildren}
-            onAddTag={(name) => {
-              const newData = { ...data };
-              // Ensure next generation exists
-              const nextGenIndex = generationIndex + 1;
-              while (newData.children_tree.length <= nextGenIndex) {
-                newData.children_tree.push({});
-              }
-              // Ajout ou conservation des données existantes
-              const nextGeneration = { ...newData.children_tree[nextGenIndex] };
-              const existingChild = nextGeneration[name];
-              nextGeneration[name] = existingChild || { children: [] };
-              newData.children_tree[nextGenIndex] = nextGeneration;
-              // Ajout dans la liste des enfants
-              const currentGeneration = { ...newData.children_tree[generationIndex] };
-              currentGeneration[personName] = {
-                ...person,
-                children: [...person.children, name]
-              };
-              newData.children_tree[generationIndex] = currentGeneration;
-              onDataChange(newData);
-            }}
-            onRemoveTag={removeChild}
-            onSelectTag={(childName) => onSelectPerson(generationIndex + 1, childName)}
-            placeholder="Ajouter un biz..."
-            createLabel="Créer"
-          />
         </div>
       </div>
-    </div>
+
+      <DeletePersonModal
+        isOpen={showDeletePersonModal}
+        onClose={() => setShowDeletePersonModal(false)}
+        OnDeletePerson={handleDeletePerson}
+        personName={personName}
+        generationIndex={generationIndex}
+      />
+    
+    </>
   );
 }
