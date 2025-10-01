@@ -47,7 +47,7 @@ export default function AddPersonModal({ isOpen, onClose, onAdd, defaultName = "
                 setNameError(null);
               }
             }}
-            className={`w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${nameError ? "border-red-500 focus:ring-red-500" : ""}`}
+            className={`w-full p-2 pl-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${nameError ? "border-red-500 focus:ring-red-500" : ""}`}
             placeholder="Nom de la personne"
             required
           />
@@ -61,21 +61,21 @@ export default function AddPersonModal({ isOpen, onClose, onAdd, defaultName = "
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-2 pl-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Resp, Trésorier, ..."
           />
         </div>
-        <div className="flex justify-end gap-2">
+        <div className="flex gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+            className="px-4 py-2 text-gray-600 border border-gray-300 rounded-xl hover:bg-gray-50 flex-1"
           >
             Annuler
           </button>
           <button
             type="submit"
-            className={"px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"}
+            className={"px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 flex-1"}
             disabled={!!nameError}
           >
             Ajouter

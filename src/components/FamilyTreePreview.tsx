@@ -244,10 +244,10 @@ export default function FamilyTreePreview() {
   );
 
   return (
-    <div className="bg-gray-50 flex flex-col h-full">
-      <div className="bg-white px-6 py-2 flex items-center justify-between shadow-md">
-        <h2 className="text-lg font-semibold text-gray-800">
-          <Network className="w-5 h-5 inline-block mr-1" />
+    <div className="bg-gradient-to-b from-gray-50 via-white to-gray-50 flex flex-col h-full">
+      <div className="px-6 py-3 min-h-[56px] bg-white/80 backdrop-blur flex items-center justify-between">
+        <h2 className="text-base font-semibold tracking-tight text-slate-900 flex items-center gap-2">
+          <Network className="w-5 h-5" />
           Aperçu du graphique
         </h2>
         {isLoading && (

@@ -93,7 +93,7 @@ export default function TagInput({
 
   return (
     <div className="relative">
-      <div className="flex flex-wrap items-center gap-2 p-2 border border-gray-300 rounded-lg min-h-[44px] focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
+      <div className="flex flex-wrap items-center gap-2 p-2 border border-gray-300 rounded-xl min-h-[44px] focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
         {tags.map(tag => (
           <div
             key={tag}
@@ -106,7 +106,7 @@ export default function TagInput({
             </button>
             <button
               onClick={() => onRemoveTag(tag)}
-              className="text-blue-600  hover:text-black transition-colors rounded-md"
+              className="text-blue-600  hover:text-black transition-colors"
             >
               <X className="w-3 h-3" />
             </button>
@@ -120,13 +120,13 @@ export default function TagInput({
           onFocus={handleInputFocus}
           onBlur={handleInputBlur}
           onKeyDown={handleKeyDown}
-          className="flex-1 min-w-[120px] outline-none bg-transparent"
+          className="flex-1 min-w-[120px] outline-none bg-transparent pl-1"
           placeholder={tags.length === 0 ? placeholder : ""}
         />
       </div>
 
       {isDropdownOpen && (
-        <div className="absolute top-full left-0 right-0 z-[1000] mt-1 bg-white border border-gray-200 rounded-md shadow-md max-h-96 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 z-[1000] mt-1 bg-white border border-gray-200 rounded-xl shadow-md max-h-96 overflow-y-auto">
           {allOptions.length === 0 ? (
             <div className="px-3 py-2 text-gray-500 text-sm">
               {inputValue ? "Aucun résultat" : "Sélectionnez ou créez un élément"}

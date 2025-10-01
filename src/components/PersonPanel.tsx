@@ -198,16 +198,16 @@ export default function PersonPanel({
 
   return (
     <>
-      <div className="flex-1 bg-white">
+      <div className="flex-1 bg-gradient-to-b from-white to-gray-50">
 
-        <div className="border-b border-gray-200 py-2 px-2 flex items-center justify-between mb-4 shadow-md bg-white">
-          <h3 className="text-lg font-semibold text-gray-800">
-            <UserRound className="w-5 h-5 inline-block mr-2" />
+        <div className="px-4 py-3 min-h-[56px] bg-white/80 backdrop-blur flex items-center justify-between mb-4">
+          <h3 className="text-base font-semibold tracking-tight text-slate-900 flex items-center gap-2">
+            <UserRound className="w-5 h-5" />
             Édition de {personName}
           </h3>
           <div className="flex flex-row items-center mr-1">
             <button
-                className="px-3 py-1 rounded-xl text-red-600 hover:text-red-800 text-sm"
+                className="px-3 py-1 rounded-full text-red-600 hover:text-red-800 text-sm"
                 title="Supprimer cette personne et toutes ses références"
                 onClick={() => setShowDeletePersonModal(true)}
               >
@@ -246,7 +246,7 @@ export default function PersonPanel({
                     updatePersonName(personName, e.target.value);
                   }
                 }}
-                className={`w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${nameError ? 'border-red-500 focus:ring-red-500' : ''}`}
+                className={`w-full p-2 pl-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${nameError ? 'border-red-500 focus:ring-red-500' : ''}`}
               />
               {nameError && (
                 <p className="text-xs text-red-600 mt-1">
@@ -262,7 +262,7 @@ export default function PersonPanel({
                 type="text"
                 value={person.title || ""}
                 onChange={(e) => updatePersonTitle(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2 pl-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Resp, Trésorier, ..."
               />
             </div>
