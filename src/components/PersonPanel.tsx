@@ -1,6 +1,7 @@
 import { FamilyData } from "@/types/familyTree";
-import { Edit3, UserRound, X } from "lucide-react";
+import { Edit3, Trash, UserRound, X } from "lucide-react";
 import TagInput from "./TagInput";
+import { useState } from "react";
 
 export default function PersonPanel({ 
   data,
@@ -16,8 +17,9 @@ export default function PersonPanel({
   onSelectPerson: (generationIndex: number | null, personName: string | null) => void;
 }) {
 
+  const [isNameError, setIsNameError] = useState(false);
 
-  if (!data || generationIndex === null || !personName) {
+  if (!data || generationIndex === null || personName == null) {
     return (
       <div className="flex-1 bg-white flex items-center justify-center">
         <div className="text-center text-gray-500">
@@ -150,15 +152,23 @@ export default function PersonPanel({
 
       <div className="border-b border-gray-200 py-2 px-2 flex items-center justify-between mb-4 shadow-md bg-white">
         <h3 className="text-lg font-semibold text-gray-800">
-          <UserRound className="w-5 h-5 inline-block mr-1" />
+          <UserRound className="w-5 h-5 inline-block mr-2" />
           Édition de {personName}
         </h3>
-        <button
-          onClick={() => onSelectPerson(generationIndex, null)}
-          className="text-gray-600 hover:text-gray-800 focus:outline-none"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        <div className="flex flex-row items-center mr-1">
+          <button
+              className="px-3 py-1 rounded-xl text-red-600 hover:text-red-800 text-sm"
+              title="Cette génération ne contient aucun membre. Vous pouvez la supprimer si vous le souhaitez."
+            >
+              <Trash className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => onSelectPerson(generationIndex, null)}
+            className="text-gray-600 hover:text-gray-800 focus:outline-none"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
       </div>
       
       <div className="px-4 h-full">
@@ -171,7 +181,33 @@ export default function PersonPanel({
             <input
               type="text"
               value={personName}
-              onChange={(e) => updatePersonName(personName, e.target.value)}
+              onChange={
+                (e) => {
+                  // C'EST COMPLETEMENT CASSE
+
+                  updatePersonName(personName, e.target.value);
+
+                  if (e.target.value.trim() == "" 
+                  || e.target.value.includes(",") 
+                  || e.target.value.includes(";" )
+                  || e.target.value.includes(":")
+                  || e.target.value.includes("\"")
+                  || e.target.value.includes("\'")
+                  || e.target.value.includes("\\")
+                  || e.target.value.includes("{")
+                  || e.target.value.includes("}")
+                  || e.target.value.includes("[")
+                  || e.target.value.includes("]")
+                  || e.target.value.includes("<")
+                  || e.target.value.includes(">")
+                  ) {
+                    setIsNameError(true);
+                  } else {
+                    setIsNameError(false);
+                    onSelectPerson(generationIndex, e.target.value);
+                  }
+                }
+              }
               className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -193,7 +229,7 @@ export default function PersonPanel({
         {generationIndex > 0 && (
           <div className="mb-3">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Parents
+              Parrains • Marraines
             </label>
             <TagInput
               tags={currentParents}
@@ -212,7 +248,7 @@ export default function PersonPanel({
               }}
               onRemoveTag={removeParent}
               onSelectTag={(parentName) => onSelectPerson(generationIndex - 1, parentName)}
-              placeholder="Ajouter un parent..."
+              placeholder="Ajouter un parrain..."
               createLabel="Créer"
             />
           </div>
@@ -221,7 +257,7 @@ export default function PersonPanel({
         {/* Children Field */}
         <div className="mb-3">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Enfants
+            Bizs
           </label>
           <TagInput
             tags={person.children}
@@ -249,7 +285,7 @@ export default function PersonPanel({
             }}
             onRemoveTag={removeChild}
             onSelectTag={(childName) => onSelectPerson(generationIndex + 1, childName)}
-            placeholder="Ajouter un enfant..."
+            placeholder="Ajouter un biz..."
             createLabel="Créer"
           />
         </div>
