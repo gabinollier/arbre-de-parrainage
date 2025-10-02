@@ -64,7 +64,7 @@ export default function GenerationMembersPanel({
       onClick={(e) => {
         onSelectPerson(generationIndex, null);
       }}>
-      <div className="px-4 py-3 min-h-[56px] bg-white/80 backdrop-blur flex items-center justify-between">
+      <div className="px-4 py-3 min-h-[56px]  flex items-center justify-between">
         <h3 className="text-base font-semibold tracking-tight text-slate-900 flex items-center gap-2">
           <UsersRound className="w-5 h-5" />
           Génération {generationIndex + 1}
@@ -91,7 +91,7 @@ export default function GenerationMembersPanel({
         </div>
       </div>
 
-      <div className="px-4 pb-4 bg-white/80 backdrop-blur">
+      <div className="px-4 pb-4 bg-gray-50">
         <label htmlFor="generation-member-search" className="sr-only">
           Rechercher un membre
         </label>
@@ -120,7 +120,7 @@ export default function GenerationMembersPanel({
         </div>
       </div>
       
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+      <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-3">
         {orderedMembers.map(({ name, person, matches }) => {
           const isSelected = selectedPerson === name;
           const unmatchedClasses = matches
@@ -155,7 +155,7 @@ export default function GenerationMembersPanel({
 
         <button
           onClick={onAddPerson}
-          className="w-full px-4 py-2.5 text-left rounded-xl border border-green-200 text-green-700 bg-white/80 hover:border-green-400 hover:bg-green-50 transition-all duration-200 shadow-sm flex items-center justify-between gap-3"
+          className="w-full px-4 py-2.5 text-left rounded-xl border border-green-300 text-green-700 bg-white/80 hover:border-green-400 hover:bg-green-50 transition-all duration-200 shadow-sm flex items-center justify-between gap-3"
         >
           <span className="font-semibold">Ajouter une personne</span>
           <Plus className="w-4 h-4" />

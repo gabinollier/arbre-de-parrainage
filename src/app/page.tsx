@@ -80,7 +80,7 @@ function HomeContent() {
     <div className="font-sans min-h-screen bg-gray-50">
       <EditorTopBar />
 
-      <div ref={containerRef} className="flex flex-col h-[calc(100vh-80px)]">
+      <div ref={containerRef} className="flex flex-col h-[calc(100vh-52px)]">
         <div 
           className="bg-white border-b border-gray-200"
           style={{ height: `${topPanelHeight}%` }}

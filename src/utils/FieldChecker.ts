@@ -25,3 +25,23 @@ export function isNameValid(name: string, generationNames: string[]): { valid: b
 
   return { valid: true };
 }
+
+export function isTitleValid(title: string): { valid: boolean; error?: string } {
+  if (title.length > 100) {
+    return { valid: false, error: "Le titre est trop long." };
+  } else if (title.includes(",")
+    || title.includes(";")
+    || title.includes(":")
+    || title.includes("\"")
+    || title.includes("\\")
+    || title.includes("{")
+    || title.includes("}")
+    || title.includes("[")
+    || title.includes("]")
+    || title.includes("<")
+    || title.includes(">")
+    ) {
+    return { valid: false, error: "Le titre contient des caractères invalides parmi , ; : \" \\ { } [ ] < >" };
+  }
+  return { valid: true };
+}

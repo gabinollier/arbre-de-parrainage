@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Modal from "../Modal";
-import { isNameValid } from "@/utils/NameChecker";
+import { isNameValid, isTitleValid } from "@/utils/FieldChecker";
 import { useData } from "@/context/DataContext";
 
 export default function AddPersonModal({ isOpen, onClose, onAdd, defaultName = "", generationIndex }: {
@@ -14,14 +14,24 @@ export default function AddPersonModal({ isOpen, onClose, onAdd, defaultName = "
   const [title, setTitle] = useState("");
   const { familyData } = useData();
   const [nameError, setNameError] = useState<string | null>(null);
+  const [titleError, setTitleError] = useState<string | null>(null);
 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim()) {
-      onAdd(name.trim(), title.trim());
+    const trimmedName = name.trim();
+    const trimmedTitle = title.trim();
+    const { valid, error } = isTitleValid(trimmedTitle);
+    if (!valid) {
+      setTitleError(error ?? "Rôle invalide.");
+      return;
+    }
+    setTitleError(null);
+    if (trimmedName) {
+      onAdd(trimmedName, trimmedTitle);
       setName("");
       setTitle("");
+      setNameError(null);
       onClose();
     }
   };
@@ -60,10 +70,20 @@ export default function AddPersonModal({ isOpen, onClose, onAdd, defaultName = "
           <input
             type="text"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-2 pl-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={(e) => {
+              const value = e.target.value;
+              setTitle(value);
+              const { valid, error } = isTitleValid(value);
+              if (!valid) {
+                setTitleError(error ?? "Rôle invalide.");
+              } else {
+                setTitleError(null);
+              }
+            }}
+            className={`w-full p-2 pl-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${titleError ? "border-red-500 focus:ring-red-500" : ""}`}
             placeholder="Resp, Trésorier, ..."
           />
+          {titleError && <p className="text-red-500 text-sm mt-1">{titleError}</p>}
         </div>
         <div className="flex gap-3">
           <button
@@ -76,7 +96,7 @@ export default function AddPersonModal({ isOpen, onClose, onAdd, defaultName = "
           <button
             type="submit"
             className={"px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 flex-1"}
-            disabled={!!nameError}
+            disabled={!!nameError || !!titleError}
           >
             Ajouter
           </button>

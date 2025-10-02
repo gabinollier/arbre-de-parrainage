@@ -9,7 +9,7 @@ export default function GenerationsPanel({ data, selectedGeneration, onSelectGen
 }) {
   return (
     <div className="w-1/4 bg-gradient-to-b from-gray-50 via-white to-gray-50 border-r border-gray-200 flex flex-col">
-      <div className="px-4 py-3 min-h-[56px] flex items-center bg-white/80 backdrop-blur">
+      <div className="px-4 py-3 min-h-[56px] flex items-center bg-gradient-to-b from-gray-50 to-transparent via-75%">
         <h3 className="text-base font-semibold tracking-tight text-slate-900 flex items-center gap-2">
           <TextAlignStart className="w-5 h-5" />
           Générations

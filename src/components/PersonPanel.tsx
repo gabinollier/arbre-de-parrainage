@@ -2,7 +2,7 @@ import { FamilyData } from "@/types/familyTree";
 import { Edit3, Trash, UserRound, X } from "lucide-react";
 import TagInput from "./TagInput";
 import { useState } from "react";
-import { isNameValid } from "@/utils/NameChecker";
+import { isNameValid, isTitleValid } from "@/utils/FieldChecker";
 import DeletePersonModal from "./modals/DeletePersonModal";
 import { useData } from "@/context/DataContext";
 
@@ -20,8 +20,14 @@ export default function PersonPanel({
   onSelectPerson: (generationIndex: number | null, personName: string | null) => void;
 }) {
 
+  const initialTitle = generationIndex !== null && personName
+    ? data.children_tree[generationIndex]?.[personName]?.title || ""
+    : "";
+
   const [nameError, setNameError] = useState<string | null>(null);
+  const [titleError, setTitleError] = useState<string | null>(null);
   const [draftName, setDraftName] = useState(personName || "");
+  const [draftTitle, setDraftTitle] = useState(initialTitle);
   const [previousPersonName, setPreviousPersonName] = useState(personName);
   const [showDeletePersonModal, setShowDeletePersonModal] = useState(false);
 
@@ -62,6 +68,11 @@ export default function PersonPanel({
     setPreviousPersonName(personName);
     setDraftName(personName || "");
     setNameError(null);
+    const nextTitle = generationIndex !== null && personName
+      ? data.children_tree[generationIndex]?.[personName]?.title || ""
+      : "";
+    setDraftTitle(nextTitle);
+    setTitleError(null);
   }
 
 
@@ -260,11 +271,26 @@ export default function PersonPanel({
               </label>
               <input
                 type="text"
-                value={person.title || ""}
-                onChange={(e) => updatePersonTitle(e.target.value)}
-                className="w-full p-2 pl-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={draftTitle}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setDraftTitle(value);
+                  const { valid, error } = isTitleValid(value);
+                  if (!valid) {
+                    setTitleError(error || "Rôle invalide.");
+                    return;
+                  }
+                  setTitleError(null);
+                  updatePersonTitle(value);
+                }}
+                className={`w-full p-2 pl-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${titleError ? 'border-red-500 focus:ring-red-500' : ''}`}
                 placeholder="Resp, Trésorier, ..."
               />
+              {titleError && (
+                <p className="text-xs text-red-600 mt-1">
+                  {titleError}
+                </p>
+              )}
             </div>
           </div>
 
