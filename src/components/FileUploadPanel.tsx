@@ -85,9 +85,9 @@ export default function FileUploadPanel() {
 
   return (
     <div className="font-sans flex flex-col items-center justify-center min-h-screen p-4 bg-gray-50">
-      <div className="w-full max-w-2xl">
-        <h1 className="text-3xl font-bold mb-8 text-center text-gray-800">
-          Arbre Généalogique MIFF
+      <div className="w-full max-w-4xl">
+        <h1 className="text-4xl font-bold mb-8 text-center text-gray-800">
+          Outil de création d'Arbre Généalogique de Miff
         </h1>
 
         <div className="p-8 border-2 border-dashed border-gray-300 rounded-xl bg-white shadow-md">
@@ -109,11 +109,11 @@ export default function FileUploadPanel() {
               type="file"
               accept=".json,application/json"
               onChange={handleFileUpload}
-              className="file:mr-4 file:py-3 file:px-6 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer cursor-pointer"
+              className="file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer cursor-pointer"
             />
 
             {fileName && !familyData && !error && (
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                 <FileText className="w-4 h-4 text-gray-500" />
                 <span className="text-sm text-gray-700">{fileName}</span>
                 <button
@@ -129,7 +129,7 @@ export default function FileUploadPanel() {
         </div>
 
         {error && (
-          <div className="mt-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+          <div className="mt-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
               <div>

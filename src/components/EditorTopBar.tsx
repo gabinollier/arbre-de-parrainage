@@ -2,14 +2,33 @@
 
 import { instance as createVizInstance } from "@viz-js/viz";
 import {jsPDF, jsPDFOptions} from "jspdf";
-import { Download, FileDown, Loader2 } from "lucide-react";
+import { CircleQuestionMark, Download, FileDown, Loader2, Upload } from "lucide-react";
 import { useCallback, useState } from "react";
 import { svg2pdf } from "svg2pdf.js";
 import { useData } from "../context/DataContext";
+import { useFamilyJsonUpload } from "../hooks/useFamilyJsonUpload";
 
-export default function EditorTopBar() {
+function getFormattedDateTime() {
+  const now = new Date();
+  
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const year = now.getFullYear();
+  
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  
+  return `${day}-${month}-${year}_${hours}h${minutes}`;
+}
+
+type EditorTopBarProps = {
+  onOpenHowItWorks: () => void;
+};
+
+export default function EditorTopBar({ onOpenHowItWorks }: EditorTopBarProps) {
   const { familyData, dot, fileName } = useData();
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const { fileInputRef, openFileDialog, handleFileChange } = useFamilyJsonUpload();
 
   const handleDownload = useCallback(() => {
     if (!familyData) {
@@ -18,7 +37,7 @@ export default function EditorTopBar() {
 
     const dataStr = JSON.stringify(familyData, null, 2);
     const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
-    const exportName = `donnees_arbre_genealogique_${Date.now()}.json`;
+    const exportName = `donnees_arbre_genealogique_${getFormattedDateTime()}.json`;
 
     const link = document.createElement("a");
     link.setAttribute("href", dataUri);
@@ -72,7 +91,7 @@ export default function EditorTopBar() {
         width: svgWidth,
         height: svgHeight,
       });
-      const exportName = `arbre_genealogique_${Date.now()}.pdf`;
+      const exportName = `arbre_genealogique_${getFormattedDateTime()}.pdf`;
       doc.save(exportName);
     } catch (error) {
       console.error("Erreur lors de l'export PDF", error);
@@ -82,27 +101,68 @@ export default function EditorTopBar() {
   }, [dot, isExportingPdf]);
 
   return (
-    <div className="bg-green-600 text-white px-2 py-2 shadow-md">
-      <div className="flex items-center justify-between ml-4">
-        <div className="flex items-center gap-4">
-          <h1 className="text-sm">
-            Fichier chargé : <span className="font-semibold">{fileName || "Aucun fichier"}</span>
-          </h1>
-        </div>
-        
+    <div className="bg-green-600 text-white px-4 py-2 shadow-md">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json,application/json"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+          {familyData ? (
+            <>
+              <button
+                type="button"
+                onClick={openFileDialog}
+                className="text-sm flex items-center gap-2 px-3 py-2 bg-white text-green-700 hover:bg-green-100 rounded-lg transition-colors font-medium"
+              >
+                <Upload className="w-4 h-4" />
+                Changer de fichier
+              </button>
+              <h1 className="text-sm">
+                Fichier chargé : <span className="font-semibold">{fileName || "Aucun fichier"}</span>
+              </h1>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={openFileDialog}
+              className="text-sm flex items-center gap-2 px-4 py-2 bg-white text-green-700 hover:bg-green-100 rounded-lg transition-colors font-medium"
+            >
+              <Upload className="w-4 h-4" />
+              Parcourir
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3">
+          {familyData && (
+            <button
+              type="button"
+              onClick={onOpenHowItWorks}
+              className="text-sm text-green-600 flex items-center gap-2 px-3 py-2 bg-white hover:bg-white/90 rounded-lg transition-colors font-medium"
+            >
+              <CircleQuestionMark className="w-4 h-4" />
+              Aide
+            </button>
+          )}
+
           <button
             onClick={handleDownload}
             disabled={!familyData}
+            title="Sauvegarder le fichier contenant les données"
             className="text-sm flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-800 disabled:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors font-medium"
           >
             <FileDown className="w-4 h-4" />
-            Exporter JSON
+            Sauvegarder JSON
           </button>
           
           <button
             onClick={handleExportPdf}
             disabled={!dot || isExportingPdf}
+            title="Exporter l'arbre au format PDF"
             className="text-sm flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-800 disabled:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors font-medium"
           >
             {isExportingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
