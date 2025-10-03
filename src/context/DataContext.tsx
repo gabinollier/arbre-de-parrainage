@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { FamilyData } from "../types/familyTree";
-import { generateDot } from "../app/utils/generateDot";
+import { generateDot } from "../utils/generateDot";
 
 type DataContextValue = {
   familyData: FamilyData | null;

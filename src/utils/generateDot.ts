@@ -1,5 +1,5 @@
-import { PersonData, ChildrenTree } from "../../types/familyTree";
-import { Person } from "../../types/Person";
+import { ChildrenTree } from "../types/familyTree";
+import { Person } from "../types/Person";
 import { getFrenchOrdinalName } from "./frenchUtils";
 import { isLightColor } from "./colorUtils";
 
@@ -69,7 +69,7 @@ function hsvToRgb(h: number, s: number, v: number): [number, number, number] {
     return [r + m, g + m, b + m];
 }
 
-function addColorsInformation(generations: Person[][], colors: string[]): Person[][] {
+function addColorsInformation(generations: Person[][], colors: string[]){
     /**
      * Assigns colors to Person objects in the family tree.
      * First generation gets unique colors, descendants inherit parent colors.
@@ -137,15 +137,14 @@ function addColorsInformation(generations: Person[][], colors: string[]): Person
             }
         }
     }
-    
-    return generations;
 }
 
 export function generateDot(data: any): string {
-    const sortedData = sortData(data.children_tree);
+    var generations = convertFileDataToClassData(data.children_tree);
+    sortData(generations);
     const colors = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7", "#DDA0DD", "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E9"];
-    const coloredData = addColorsInformation(sortedData, colors);
-    return generateDotFromGenerations(coloredData, data.first_year, false);
+    addColorsInformation(generations, colors);
+    return generateDotFromGenerations(generations, data.first_year, false);
 }
 
 function generateDotFromGenerations(generations: Person[][], firstYear: number, showDebugInfos: boolean = false): string {
@@ -429,7 +428,7 @@ function _sortChildren(children: Person[]): Person[] {
     return newChildren;
 }
 
-function sortData(data: ChildrenTree): Person[][] {
+function convertFileDataToClassData(data: ChildrenTree): Person[][] {
     // Create persons without the children and parents
     const generations: Person[][] = Array(data.length).fill(null).map(() => []);
     
@@ -485,6 +484,12 @@ function sortData(data: ChildrenTree): Person[][] {
             }
         }
     }
+
+    return generations;
+
+}
+
+function sortData(generations: Person[][]) {
 
     // Check le nombre de jointures dont vont être responsable chaque personne.
     // (Une 'jointure' est un réunion de deux arbres qui étaient distincts avant, 

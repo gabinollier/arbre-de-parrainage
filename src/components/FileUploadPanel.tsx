@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { Upload, X, AlertCircle, FileText } from "lucide-react";
-import { validateData } from "../app/utils/validateData";
+import { validateData } from "../utils/validateData";
 import { useData } from "../context/DataContext";
 import { FamilyData } from "../types/familyTree";
 

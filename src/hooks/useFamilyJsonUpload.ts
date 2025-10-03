@@ -1,7 +1,7 @@
 'use client';
 
 import { ChangeEvent, useCallback, useRef } from "react";
-import { parseFamilyDataFile } from "../app/utils/parseFamilyDataFile";
+import { parseFamilyDataFile } from "../utils/parseFamilyDataFile";
 import { useData } from "../context/DataContext";
 
 export function useFamilyJsonUpload() {
