@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { instance as createVizInstance } from "@viz-js/viz";
-import { BarChart3, Loader2, Network, RotateCcw } from "lucide-react";
+import { BarChart3, Loader2, Network, RotateCcw, Shuffle } from "lucide-react";
 import { useData } from "../context/DataContext";
 
 export default function FamilyTreePreview() {
-  const { dot, isInitialLoad, setIsInitialLoad } = useData();
+  const { dot, isInitialLoad, setIsInitialLoad, familyData, updateFamilyData } = useData();
   const [isLoading, setIsLoading] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -250,6 +250,9 @@ export default function FamilyTreePreview() {
           <Network className="w-5 h-5" />
           Aperçu du graphique
         </h2>
+
+        <button className="rounded-xl bg-gray-300 flex items-center gap-1 p-1 px-3 text-gray-700 text-xs"><Shuffle className="w-3 h-3" />Lignée n°1</button>
+
         {isLoading && (
           <div className="flex items-center gap-2 text-blue-600">
             <Loader2 className="w-4 h-4 animate-spin" />

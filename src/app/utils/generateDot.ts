@@ -195,7 +195,7 @@ function generateDotFromGenerations(generations: Person[][], firstYear: number, 
         const genNodeId = `gen_label_${genIdx}`;
         
         // Generation label doesn't need quotes around it, just put it directly
-        dotLines.push(`\t${genNodeId} [label=${genLabel} fillcolor=lightgrey fixedsize=true fontweight=bold penwidth=4 shape=box style="filled,rounded" width=4]`);
+        dotLines.push(`\t${genNodeId} [label=${genLabel} fillcolor=lightgrey fixedsize=true fontweight=bold penwidth=4 shape=box style="filled,rounded" width=4 tooltip=" "]`);
         
         // Create invisible spacer node
         const spacerNode = `spacer_${genIdx}`;
@@ -223,9 +223,11 @@ function generateDotFromGenerations(generations: Person[][], firstYear: number, 
         for (const person of generation) {
             const personId = `${person.name}_${iGeneration}`;
             const quotedPersonId = quoteNodeName(personId);
+            const lineageIndex = person.position[0];
+            const tooltipText = lineageIndex === null || lineageIndex === undefined ? "Lignée n°?" : `Lignée n°${lineageIndex+1}`;
             
             if (person.invisible) {
-                dotLines.push(`\t${quotedPersonId} [fixedsize=true height=0 label="" style=invisible width=0]`);
+                dotLines.push(`\t${quotedPersonId} [fixedsize=true height=0 label="" style=invisible tooltip="${tooltipText}" width=0]`);
             } else {
                 let label: string;
                 if (showDebugInfos) {
@@ -247,7 +249,7 @@ function generateDotFromGenerations(generations: Person[][], firstYear: number, 
                 const color = person.color!.startsWith('#') ? `"${person.color}"` : person.color!;
                 const fontColor = isLightColor(person.color!) ? 'black' : 'white';
                 
-                dotLines.push(`\t${quotedPersonId} [label=<${label}> fillcolor=${color} fontcolor=${fontColor} penwidth=${borderWidth} shape=box style="filled,rounded"]`);
+                dotLines.push(`\t${quotedPersonId} [label=<${label}> fillcolor=${color} fontcolor=${fontColor} penwidth=${borderWidth} shape=box style="filled,rounded" tooltip="${tooltipText}"]`);
             }
             
             nodesForRanking[iGeneration].add(personId);
