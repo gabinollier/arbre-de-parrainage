@@ -57,7 +57,7 @@ export default function HowItWorks() {
         </StepRow>
 
         <StepRow step={4}>
-          Optionnel : Si une des lignées dans l'aperçu ne vous plaît pas, cliquez sur un de ses membres pour obtenir un agencement différent.
+          Optionnel : Si l'agencement d'une des lignées ne vous plaît pas, cliquez sur un de ses membres (dans l'aperçu) pour obtenir un agencement différent.
         </StepRow>
 
         <StepRow step={5}>
