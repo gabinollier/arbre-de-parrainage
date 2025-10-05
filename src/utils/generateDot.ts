@@ -1,4 +1,4 @@
-import { ChildrenTree } from "../types/familyTree";
+import { ChildrenTree, FamilyData } from "../types/familyTree";
 import { Person } from "../types/Person";
 import { getFrenchOrdinalName } from "./frenchUtils";
 import { isLightColor } from "./colorUtils";
@@ -139,12 +139,60 @@ function addColorsInformation(generations: Person[][], colors: string[]){
     }
 }
 
-export function generateDot(data: any): string {
-    var generations = convertFileDataToClassData(data.children_tree);
+export type DotComputationResult = {
+    dot: string;
+    trees: Person[][][];
+};
+
+export function generateDotData(data: FamilyData): DotComputationResult {
+    const generations = convertFileDataToClassData(data.children_tree);
     sortData(generations);
     const colors = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7", "#DDA0DD", "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E9"];
     addColorsInformation(generations, colors);
-    return generateDotFromGenerations(generations, data.first_year, false);
+    const dot = generateDotFromGenerations(generations, data.first_year, false);
+    const trees = buildTreesFromGenerations(generations);
+    return { dot, trees };
+}
+
+export function generateDot(data: FamilyData): string {
+    return generateDotData(data).dot;
+}
+
+function buildTreesFromGenerations(generations: Person[][]): Person[][][] {
+    if (generations.length === 0) {
+        return [];
+    }
+
+    const trees: Person[][][] = [];
+    const generationCount = generations.length;
+
+    for (let generationIndex = 0; generationIndex < generationCount; generationIndex++) {
+        const generation = generations[generationIndex];
+        for (const person of generation) {
+            if (person.invisible) {
+                continue;
+            }
+
+            const treeIndex = person.position[0];
+            if (treeIndex === null || treeIndex === undefined) {
+                continue;
+            }
+
+            if (!trees[treeIndex]) {
+                trees[treeIndex] = Array.from({ length: generationCount }, () => []);
+            }
+
+            trees[treeIndex][generationIndex].push(person);
+        }
+    }
+
+    for (let treeIndex = 0; treeIndex < trees.length; treeIndex++) {
+        if (!trees[treeIndex]) {
+            trees[treeIndex] = Array.from({ length: generationCount }, () => []);
+        }
+    }
+
+    return trees;
 }
 
 function generateDotFromGenerations(generations: Person[][], firstYear: number, showDebugInfos: boolean = false): string {

@@ -1,8 +1,9 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import type { Person } from "../types/Person";
 import { FamilyData } from "../types/familyTree";
-import { generateDot } from "../utils/generateDot";
+import { generateDotData } from "../utils/generateDot";
 
 type DataContextValue = {
   familyData: FamilyData | null;
@@ -14,6 +15,7 @@ type DataContextValue = {
   error: string;
   setError: React.Dispatch<React.SetStateAction<string>>;
   dot: string;
+  peopleTrees: Person[][][];
   isInitialLoad: boolean;
   setIsInitialLoad: React.Dispatch<React.SetStateAction<boolean>>;
 };
@@ -30,7 +32,10 @@ export function DataProvider({ children }: DataProviderProps) {
   const [error, setError] = useState("");
   const [isInitialLoad, setIsInitialLoad] = useState(false);
 
-  const dot = useMemo(() => (familyData ? generateDot(familyData) : ""), [familyData]);
+  const { dot, trees: peopleTrees } = useMemo(
+    () => (familyData ? generateDotData(familyData) : { dot: "", trees: [] }),
+    [familyData]
+  );
 
   const updateFamilyData = useCallback((updater: (data: FamilyData) => FamilyData) => {
     setFamilyData((previous) => {
@@ -59,10 +64,24 @@ export function DataProvider({ children }: DataProviderProps) {
       error,
       setError,
       dot,
+      peopleTrees,
       isInitialLoad,
       setIsInitialLoad,
     }),
-    [familyData, setFamilyData, updateFamilyData, clearData, fileName, setFileName, error, setError, dot, isInitialLoad, setIsInitialLoad]
+    [
+      familyData,
+      setFamilyData,
+      updateFamilyData,
+      clearData,
+      fileName,
+      setFileName,
+      error,
+      setError,
+      dot,
+      peopleTrees,
+      isInitialLoad,
+      setIsInitialLoad,
+    ]
   );
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

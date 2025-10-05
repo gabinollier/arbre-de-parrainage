@@ -1,3 +1,7 @@
+// This class is ONLY used in the process of generating the DOT representation of the family tree.
+// JSON data is converted into instances of this class for easier manipulation but immediately forgotten afterwards.
+// It is NOT used in the application state or anywhere else.
+
 export class Person {
   name: string;
   generation: number;

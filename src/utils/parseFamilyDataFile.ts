@@ -1,4 +1,4 @@
-import { FamilyData } from "../../types/familyTree";
+import { FamilyData } from "../types/familyTree";
 import { validateData } from "./validateData";
 
 export async function parseFamilyDataFile(file: File): Promise<FamilyData> {

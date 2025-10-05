@@ -4,9 +4,48 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { instance as createVizInstance } from "@viz-js/viz";
 import { BarChart3, Loader2, Network, RotateCcw, Shuffle } from "lucide-react";
 import { useData } from "../context/DataContext";
+import { Generation } from "../types/familyTree";
+
+function shuffleArray<T>(items: T[]): T[] {
+  const copy = [...items];
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [copy[index], copy[randomIndex]] = [copy[randomIndex], copy[index]];
+  }
+  return copy;
+}
+
+function darkenHexColor(hex: string, amount: number): string {
+  const normalized = hex.trim();
+  if (!normalized.startsWith("#") || (normalized.length !== 7 && normalized.length !== 4)) {
+    return hex;
+  }
+
+  const expandShortHex = (value: string) =>
+    value
+      .split("")
+      .map((char) => char + char)
+      .join("");
+
+  const hexValue = normalized.length === 4 ? expandShortHex(normalized.slice(1)) : normalized.slice(1);
+
+  const factor = Math.max(0, Math.min(1, 1 - amount));
+
+  const toChannel = (start: number) => {
+    const channel = parseInt(hexValue.slice(start, start + 2), 16);
+    const adjusted = Math.max(0, Math.min(255, Math.round(channel * factor)));
+    return adjusted.toString(16).padStart(2, "0");
+  };
+
+  const r = toChannel(0);
+  const g = toChannel(2);
+  const b = toChannel(4);
+
+  return `#${r}${g}${b}`;
+}
 
 export default function FamilyTreePreview() {
-  const { dot, isInitialLoad, setIsInitialLoad, familyData, updateFamilyData } = useData();
+  const { dot, isInitialLoad, setIsInitialLoad, peopleTrees, updateFamilyData } = useData();
   const [isLoading, setIsLoading] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -15,6 +54,163 @@ export default function FamilyTreePreview() {
 
   const graphRef = useRef<HTMLDivElement>(null);
   const graphContainerRef = useRef<HTMLDivElement>(null);
+  const detachNodeListenersRef = useRef<(() => void) | null>(null);
+
+  const handleShuffleTree = useCallback(
+    (treeIndex: number) => {
+      const treeGenerations = peopleTrees[treeIndex];
+      if (!treeGenerations || treeGenerations.length === 0) {
+        return;
+      }
+
+      const generationNameSets = treeGenerations.map((generation) => new Set(generation.map((person) => person.name)));
+
+      updateFamilyData((previous) => {
+        const updatedChildrenTree = previous.children_tree.map((generation, generationIndex) => {
+          const nameSet = generationNameSets[generationIndex];
+          if (!nameSet || nameSet.size <= 1) {
+            return generation;
+          }
+
+          const entries = Object.entries(generation);
+          const inTreeEntries = entries.filter(([name]) => nameSet.has(name));
+          if (inTreeEntries.length <= 1) {
+            return generation;
+          }
+
+          const shuffledTreeEntries = shuffleArray(inTreeEntries);
+          let pointer = 0;
+
+          const remappedEntries = entries.map(([name, value]) => {
+            if (!nameSet.has(name)) {
+              return [name, value] as [string, typeof value];
+            }
+
+            const nextEntry = shuffledTreeEntries[pointer++];
+            if (!nextEntry) {
+              return [name, value] as [string, typeof value];
+            }
+
+            return nextEntry;
+          });
+
+          return Object.fromEntries(remappedEntries) as Generation;
+        });
+
+        return {
+          ...previous,
+          children_tree: updatedChildrenTree,
+        };
+      });
+    },
+    [peopleTrees, updateFamilyData]
+  );
+
+  const attachNodeListeners = useCallback(
+    (svgElement: SVGSVGElement) => {
+      if (detachNodeListenersRef.current) {
+        detachNodeListenersRef.current();
+        detachNodeListenersRef.current = null;
+      }
+
+      const anchors = Array.from(svgElement.querySelectorAll("a")) as unknown as SVGElement[];
+      const listeners: Array<{
+        target: SVGElement;
+        clickHandler: EventListener;
+        downHandler: EventListener;
+        enterHandler?: EventListener;
+        leaveHandler?: EventListener;
+        pathElement?: SVGElement;
+        originalFill?: string;
+      }> = [];
+
+      anchors.forEach((anchor) => {
+        const title = anchor.getAttribute("xlink:title") ?? anchor.getAttribute("title");
+        if (!title) {
+          return;
+        }
+
+        const match = title.match(/Lignée n°(\d+)/i);
+        if (!match) {
+          return;
+        }
+
+        const treeIndex = Number.parseInt(match[1], 10) - 1;
+        if (!Number.isFinite(treeIndex) || treeIndex < 0) {
+          return;
+        }
+
+        const clickHandler: EventListener = (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          handleShuffleTree(treeIndex);
+        };
+
+        const downHandler: EventListener = (event) => {
+          event.stopPropagation();
+        };
+
+  const pathElement = anchor.querySelector("path") as SVGElement | null;
+  const originalFill = pathElement?.getAttribute("fill") ?? null;
+        let darkerFill: string | null = null;
+
+        if (originalFill && originalFill.startsWith("#")) {
+          darkerFill = darkenHexColor(originalFill, 0.15);
+          if (pathElement) {
+            pathElement.style.transition = "fill 150ms ease";
+          }
+        }
+
+        const enterHandler: EventListener | undefined = darkerFill
+          ? () => {
+              if (pathElement) {
+                pathElement.setAttribute("fill", darkerFill!);
+              }
+            }
+          : undefined;
+
+        const leaveHandler: EventListener | undefined = darkerFill
+          ? () => {
+              if (pathElement && originalFill) {
+                pathElement.setAttribute("fill", originalFill);
+              }
+            }
+          : undefined;
+
+        anchor.addEventListener("click", clickHandler);
+        anchor.addEventListener("mousedown", downHandler);
+        if (enterHandler) {
+          anchor.addEventListener("mouseenter", enterHandler);
+        }
+        if (leaveHandler) {
+          anchor.addEventListener("mouseleave", leaveHandler);
+        }
+        anchor.style.cursor = "pointer";
+        anchor.setAttribute("xlink:title", `Cliquez pour réorganiser la lignée n°${treeIndex + 1}`);
+        anchor.classList.add("transition-transform", "duration-150", "active:scale-95");
+        anchor.style.transformOrigin = "center";
+        anchor.style.setProperty("transform-box", "fill-box");
+        listeners.push({ target: anchor, clickHandler, downHandler, enterHandler, leaveHandler, pathElement: pathElement ?? undefined, originalFill: originalFill ?? undefined });
+      });
+
+      detachNodeListenersRef.current = () => {
+        listeners.forEach(({ target, clickHandler, downHandler, enterHandler, leaveHandler, pathElement, originalFill }) => {
+          target.removeEventListener("click", clickHandler);
+          target.removeEventListener("mousedown", downHandler);
+          if (enterHandler) {
+            target.removeEventListener("mouseenter", enterHandler);
+          }
+          if (leaveHandler) {
+            target.removeEventListener("mouseleave", leaveHandler);
+          }
+          if (pathElement && originalFill) {
+            pathElement.setAttribute("fill", originalFill);
+          }
+        });
+      };
+    },
+    [handleShuffleTree]
+  );
 
   const renderGraph = useCallback(
     async (resetZoom: boolean) => {
@@ -26,7 +222,7 @@ export default function FamilyTreePreview() {
 
       try {
         const viz = await createVizInstance();
-        const element = await viz.renderSVGElement(dot);
+        const element = (await viz.renderSVGElement(dot)) as SVGSVGElement;
 
         if (!graphRef.current) {
           return;
@@ -34,6 +230,7 @@ export default function FamilyTreePreview() {
 
         graphRef.current.innerHTML = "";
         graphRef.current.appendChild(element);
+        attachNodeListeners(element);
 
         if (resetZoom) {
           const container = graphContainerRef.current;
@@ -71,7 +268,7 @@ export default function FamilyTreePreview() {
         setIsLoading(false);
       }
     },
-    [dot]
+    [dot, attachNodeListeners]
   );
 
   useEffect(() => {
@@ -94,6 +291,15 @@ export default function FamilyTreePreview() {
       cancelled = true;
     };
   }, [dot, isInitialLoad, setIsInitialLoad, renderGraph]);
+
+  useEffect(() => {
+    return () => {
+      if (detachNodeListenersRef.current) {
+        detachNodeListenersRef.current();
+        detachNodeListenersRef.current = null;
+      }
+    };
+  }, []);
 
   const handleWheel = useCallback(
     (event: React.WheelEvent) => {
@@ -136,6 +342,11 @@ export default function FamilyTreePreview() {
   );
 
   const handleMouseDown = useCallback((event: React.MouseEvent) => {
+    const anchor = (event.target as Element | null)?.closest("a");
+    if (anchor) {
+      return;
+    }
+
     event.preventDefault();
     setIsDragging(true);
     setLastMousePos({ x: event.clientX, y: event.clientY });
@@ -245,18 +456,16 @@ export default function FamilyTreePreview() {
 
   return (
     <div className="bg-gradient-to-b from-gray-50 via-white to-gray-50 flex flex-col h-full">
-      <div className="px-6 py-3 min-h-[56px] bg-white/80 backdrop-blur flex items-center justify-between">
-        <h2 className="text-base font-semibold tracking-tight text-slate-900 flex items-center gap-2">
+      <div className="px-6 py-3 min-h-[56px] bg-white flex items-center justify-between gap-4 shadow-sm">
+        <h2 className="text-base font-semibold tracking-tight text-slate-900 flex items-center gap-2 flex-shrink-0 -mt-3">
           <Network className="w-5 h-5" />
           Aperçu du graphique
         </h2>
 
-        <button className="rounded-xl bg-gray-300 flex items-center gap-1 p-1 px-3 text-gray-700 text-xs"><Shuffle className="w-3 h-3" />Lignée n°1</button>
-
         {isLoading && (
-          <div className="flex items-center gap-2 text-blue-600">
+          <div className="flex items-center gap-2 text-blue-600 text-sm font-medium">
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span className="text-sm font-medium">Génération...</span>
+            Génération...
           </div>
         )}
       </div>

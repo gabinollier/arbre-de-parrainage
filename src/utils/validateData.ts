@@ -1,4 +1,4 @@
-import { ChildrenTree, Generation, PersonData, ValidationResult } from '../../types/familyTree';
+import { ChildrenTree, Generation, PersonData, ValidationResult } from '../types/familyTree';
 import { getFrenchOrdinalName } from './frenchUtils';
 
 export function validateData(childrenTree: ChildrenTree): ValidationResult {

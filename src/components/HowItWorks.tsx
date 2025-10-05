@@ -57,7 +57,7 @@ export default function HowItWorks() {
         </StepRow>
 
         <StepRow step={4}>
-          Optionnel : Si une des lignées dans l'aperçu ne vous plaît pas, cliquez sur le bouton "<Shuffle className="inline size-4 text-gray-700 align-sub mx-1" />" pour obtenir un agencement différent.
+          Optionnel : Si une des lignées dans l'aperçu ne vous plaît pas, cliquez sur un de ses membres pour obtenir un agencement différent.
         </StepRow>
 
         <StepRow step={5}>

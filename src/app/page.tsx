@@ -82,7 +82,7 @@ function HomeContent() {
       <HowItWorksModal isOpen={isHowItWorksOpen} onClose={() => setIsHowItWorksOpen(false)} />
 
       {!familyData ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-6 px-6 pb-10">
+        <div className="flex flex-1 min-h-0 flex-col items-center justify-center gap-6 px-6 pb-10">
           <h2 className="text-3xl font-semibold text-center text-gray-900">Comment ça fonctionne ?</h2>
           <HowItWorks />
           {error && (
@@ -96,7 +96,7 @@ function HomeContent() {
           )}
         </div>
       ) : (
-        <div className="flex flex-col h-[calc(100vh-52px)] overflow-hidden">
+  <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {error && (
             <div className="px-6 pt-4 flex justify-center flex-shrink-0">
               <div className="w-full max-w-4xl flex gap-3 rounded-2xl border border-red-200 bg-red-50 px-6 py-4 text-red-700 shadow-sm">
@@ -108,26 +108,26 @@ function HomeContent() {
               </div>
             </div>
           )}
-          <div ref={containerRef} className="flex-1 flex flex-col overflow-hidden">
+          <div ref={containerRef} className="flex-1 min-h-0 flex flex-col overflow-hidden">
             <div
               className="bg-white border-b border-gray-200 flex-shrink-0 overflow-hidden"
               style={{ flexGrow: topPanelHeight, flexBasis: 0 }}
             >
-              <div className="h-full overflow-auto">
+              <div className="h-full overflow-hidden">
                 <FamilyTreeEditor />
               </div>
             </div>
 
             <div
-              className="h-6 -my-2 bg-transparent cursor-ns-resize flex items-center justify-center flex-shrink-0"
+              className="h-3 bg-white cursor-ns-resize flex items-center justify-center flex-shrink-0"
               onMouseDown={handleResizeStart}
               title="Glisser pour redimensionner"
             >
-              <div className="h-1 w-full bg-gray-100"></div>
+              <div className="h-1 w-full bg-gray-200 top-0 -mt-3"></div>
             </div>
 
             <div
-              className="bg-gray-50 flex flex-col overflow-hidden flex-shrink-0"
+              className="bg-white flex flex-col overflow-hidden flex-shrink-0"
               style={{ flexGrow: 100 - topPanelHeight, flexBasis: 0 }}
             >
               <FamilyTreePreview />

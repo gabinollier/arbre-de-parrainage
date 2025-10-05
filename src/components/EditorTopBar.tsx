@@ -101,7 +101,7 @@ export default function EditorTopBar({ onOpenHowItWorks }: EditorTopBarProps) {
   }, [dot, isExportingPdf]);
 
   return (
-    <div className="bg-green-600 text-white px-4 py-2 shadow-md">
+    <div className="sticky top-0 z-30 bg-green-600 text-white px-4 py-2 shadow-md">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <input
