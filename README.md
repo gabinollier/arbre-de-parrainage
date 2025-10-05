@@ -1,36 +1,17 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Web app de création d'arbre de parrainage
 
-## Getting Started
+## Résumé
 
-First, run the development server:
+En école d'ingénieur, il est courant que les étudiants en première année soient parrainés par des étudiants plus âgés.
+Ces étudiants deviennent eux-même des parrains à leur tour lorsqu'ils passent en deuxième année.
+Cela crée une sorte d'arbre généalogique des étudiants, mais en plus complexe (possibilité d'avoir plus de deux parrains, etc).
+Cette application web a été créée pour permettre aux étudiants de mon école de créer et d'éditer de tels arbres graphiquement.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Les données sont importées et exportées au format JSON (de sorte que, même si l'interface web venait à disparaître, les données resteraient exploitables par les étudiants dans le futur).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+L'arbre en lui même est exporté en PDF, ce qui permet de le partager facilement dans un groupe de promo et de pouvoir zoomer dedans (les formats image classiques sont compressés par les réseaux sociaux et ne permettent pas de zoomer sans perte de qualité).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Stack technique
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+L'application est développée en React avec TypeScript et en Next.js.
+Elle utilise viz.js (qui est une version de Graphviz compilée en WebAssembly) pour générer un svg de l'arbre à partir des données JSON, et jsPDF pour exporter le svg en PDF.
