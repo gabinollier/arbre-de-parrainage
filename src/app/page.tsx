@@ -77,7 +77,7 @@ function HomeContent() {
   }, [isResizing, handleResize, handleResizeEnd]);
 
   return (
-    <div className="font-sans min-h-screen bg-gray-50 flex flex-col">
+    <div className="font-sans min-h-screen bg-gray-50 flex flex-col text-gray-900">
       <EditorTopBar onOpenHowItWorks={() => setIsHowItWorksOpen(true)} />
       <HowItWorksModal isOpen={isHowItWorksOpen} onClose={() => setIsHowItWorksOpen(false)} />
 
