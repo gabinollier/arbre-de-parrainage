@@ -32,14 +32,16 @@ export default function GenerationMembersPanel({
   }, [generation]);
 
   const orderedMembers = useMemo<Array<{ name: string; person: PersonData; matches: boolean }>>(() => {
-    const trimmed = searchQuery.trim().toLowerCase();
+    const trimmedSearchQuery = searchQuery.trim().toLowerCase();
 
     const normalized = members.map(([name, person]) => {
-      const matches = trimmed.length === 0 || name.toLowerCase().includes(trimmed);
+      const matches = trimmedSearchQuery.length === 0 || name.toLowerCase().includes(trimmedSearchQuery);
       return { name, person, matches };
     });
 
-    if (trimmed.length === 0) {
+    normalized.sort((a, b) => a.name.localeCompare(b.name));
+
+    if (trimmedSearchQuery.length === 0) {
       return normalized;
     }
 
