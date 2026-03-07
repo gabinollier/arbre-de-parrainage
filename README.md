@@ -1,17 +1,31 @@
-# Web app de création d'arbre de parrainage
+# Student Mentorship Tree Builder
 
-## Résumé
+## 📖 Overview
 
-En école d'ingénieur, il est courant que les étudiants en première année soient parrainés par des étudiants plus âgés.
-Ces étudiants deviennent eux-même des parrains à leur tour lorsqu'ils passent en deuxième année.
-Cela crée une sorte d'arbre généalogique des étudiants, mais en plus complexe (possibilité d'avoir plus de deux parrains, etc).
-Cette application web a été créée pour permettre aux étudiants de mon école de créer et d'éditer de tels arbres graphiquement.
+In many engineering schools, first-year students are paired with older students who act as mentors. As these students progress and become mentors themselves, a complex genealogical tree emerges. Unlike traditional family trees, these structures can be quite complex (for example, a student may have more than two mentors).
 
-Les données sont importées et exportées au format JSON (de sorte que, même si l'interface web venait à disparaître, les données resteraient exploitables par les étudiants dans le futur).
+This application allows students to create and edit these mentorship trees through a graphical interface. It focuses on data longevity and high-quality sharing.
 
-L'arbre en lui même est exporté en PDF, ce qui permet de le partager facilement dans un groupe de promo et de pouvoir zoomer dedans (les formats image classiques sont compressés par les réseaux sociaux et ne permettent pas de zoomer sans perte de qualité).
+### Key Features
 
-## Stack technique
+* **Complex Lineage Support:** Handles complex relationships involving multiple mentors per student.
+* **JSON Data Management:** Data is imported and exported in JSON format. This ensures that the data remains raw and readable by humans or other scripts, even if this specific web interface eventually becomes obsolete.
+* **Vector PDF Export:** The tree is generated as a PDF. This allows the file to be shared on social media groups without compression artifacts, enabling infinite zoom on large trees without any loss of quality.
 
-L'application est développée en React avec TypeScript et en Next.js.
-Elle utilise viz.js (qui est une version de Graphviz compilée en WebAssembly) pour générer un svg de l'arbre à partir des données JSON, et jsPDF pour exporter le svg en PDF.
+## 🛠 Tech Stack
+
+The application is built using a modern web stack:
+
+* **Framework:** [Next.js](https://nextjs.org/) (React)
+* **Language:** TypeScript
+* **Visualization:** [viz.js](https://github.com/mdaines/viz.js/) (a version of Graphviz compiled to WebAssembly) is used to generate an SVG of the tree from the JSON data.
+* **Export:** [jsPDF](https://github.com/parallax/jsPDF) is used to convert the generated SVG into a downloadable PDF.
+
+## 🚀 Getting Started
+
+First, clone the repository:
+
+```bash
+git clone https://github.com/gabinollier/arbre-de-parrainage.git
+cd arbre-de-parrainage
+```
