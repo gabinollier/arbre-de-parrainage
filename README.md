@@ -1,31 +1,59 @@
-# Student Mentorship Tree Builder
+# Outil de création d'arbre généalogique de parrainage
 
-## 📖 Overview
+![Interface de l'application](assets/interface.png)
 
-In many engineering schools, first-year students are paired with older students who act as mentors. As these students progress and become mentors themselves, a complex genealogical tree emerges. Unlike traditional family trees, these structures can be quite complex (for example, a student may have more than two mentors).
+Dans de nombreuses écoles, les étudiant·e·s de première année sont parrainé·e·s par des étudiant·e·s de deuxième année. L'année suivante, ces étudiant·e·s parrainent à leur tour, ce qui crée des arbres généalogiques. Contrairement aux arbres familiaux traditionnels, ces structures peuvent être très complexes : multiples parrains et marraines, multiples parrainé·e·s, regroupement avec des « frères » ou des « cousins », etc.
 
-This application allows students to create and edit these mentorship trees through a graphical interface. It focuses on data longevity and high-quality sharing.
+Cette application permet aux de créer et d'éditer ces graphes de parrainage complexes à travers une interface graphique simple.
 
-### Key Features
+Un algorithme essaie d'agencer automatiquement les nœuds afin de minimiser le nombre de liens qui se croisent et de créer des arbres plus lisibles. Chaque lignée possède une couleur, qui se mélange en cas de croisement.
 
-* **Complex Lineage Support:** Handles complex relationships involving multiple mentors per student.
-* **JSON Data Management:** Data is imported and exported in JSON format. This ensures that the data remains raw and readable by humans or other scripts, even if this specific web interface eventually becomes obsolete.
-* **Vector PDF Export:** The tree is generated as a PDF. This allows the file to be shared on social media groups without compression artifacts, enabling infinite zoom on large trees without any loss of quality.
+## Données
 
-## 🛠 Tech Stack
+Les données sont importées puis exportées dans un format JSON que les étudiant·e·s doivent stocker eux·elles-mêmes. Cela permet de ne pas lock-in les données dans mon application : s'ils et elles le veulent, les étudiant·e·s pourront donc écrire leur propre outil dans le futur en réutilisant les données exportées.
 
-The application is built using a modern web stack:
+Le format est le suivant :
 
-* **Framework:** [Next.js](https://nextjs.org/) (React)
-* **Language:** TypeScript
-* **Visualization:** [viz.js](https://github.com/mdaines/viz.js/) (a version of Graphviz compiled to WebAssembly) is used to generate an SVG of the tree from the JSON data.
-* **Export:** [jsPDF](https://github.com/parallax/jsPDF) is used to convert the generated SVG into a downloadable PDF.
+```json
+{
+  "first_year": 2014,
 
-## 🚀 Getting Started
+  "children_tree": [ 
+    {
+      "Claire": {"children": ["Emmanuelle", "Alicia"], "title": "Resp"},
+      "Yoann": {"children": ["Ludovic"]}
+    },
+    {
+      "Emmanuelle": {"children": ["Nathan"]},
+      "Ludovic": {"children": ["Patrick", "Nathan"], "title": "Resp"},
+      "Alicia": {"children": [], "title": "Trésorière"}
+    },
+    {
+      "Nathan": {"children": []},
+      "Patrick": {"children": []}
+    }
+  ]
+}
+```
 
-First, clone the repository:
+Vous trouverez un exemple de données plus complet dans le fichier `example_data.json`.
+
+
+## Export
+
+L'application crée un graphe en `dot` qui est rendu en SVG grâce à la bibliothèque `vis.js` (Graphviz compilée en WebAssembly). Pour l'export, `jsPDF` convertit le SVG en PDF.
+
+Le format PDF est facilement partageable sur des groupes de discussions d'étudiant·e·s (WhatsApp, Messenger, etc.), et est ouvrable et zoomable à l'infini, même sur smartphone.
+
+## Comment modifier l'application ?
+
+Utiliser les commandes suivantes :
 
 ```bash
 git clone https://github.com/gabinollier/arbre-de-parrainage.git
 cd arbre-de-parrainage
+npm install
+npm run dev
 ```
+
+Sentez-vous libre d'envoyer des pull requests pour apporter vos modifications.

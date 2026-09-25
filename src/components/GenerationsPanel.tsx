@@ -1,5 +1,6 @@
 import { ChevronRight, Plus, TextAlignStart } from "lucide-react";
 import { FamilyData } from "../types/familyTree";
+import { isInvisibleRole } from "../utils/FieldChecker";
 
 export default function GenerationsPanel({ data, selectedGeneration, onSelectGeneration, onAddGeneration }: {
   data: FamilyData;
@@ -19,7 +20,7 @@ export default function GenerationsPanel({ data, selectedGeneration, onSelectGen
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {data.children_tree.map((generation, index) => {
           const year = data.first_year + index;
-          const memberCount = Object.keys(generation).length;
+          const memberCount = Object.values(generation).filter(person => !isInvisibleRole(person.title)).length;
           
           return (
             <button

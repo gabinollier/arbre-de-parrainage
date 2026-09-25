@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 export default function TagInput({ 
   tags, 
@@ -22,6 +23,8 @@ export default function TagInput({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; width: number } | null>(null);
 
   const filteredOptions = availableOptions.filter(option =>
     option.toLowerCase().includes(inputValue.toLowerCase())
@@ -77,6 +80,36 @@ export default function TagInput({
     }
   };
 
+  // Calcule la position de la liste déroulante à l'ouverture,
+  // pour la rendre en portail et ainsi passer au-dessus de l'aperçu du graphe
+  useLayoutEffect(() => {
+    if (!isDropdownOpen) {
+      setDropdownPosition(null);
+      return;
+    }
+
+    const updatePosition = () => {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setDropdownPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      });
+    };
+
+    updatePosition();
+
+    // Repositionne si la fenêtre change (redimensionnement des panneaux, ...)
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [isDropdownOpen]);
+
   const handleSelectOption = (option: string) => {
     if (option.startsWith(createLabel)) {
       // Extract the name from "Créer "name""
@@ -92,7 +125,7 @@ export default function TagInput({
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <div className="flex flex-wrap items-center gap-2 p-2 border border-gray-300 rounded-xl min-h-[44px] focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
         {tags.map(tag => (
           <div
@@ -125,8 +158,11 @@ export default function TagInput({
         />
       </div>
 
-      {isDropdownOpen && (
-        <div className="absolute top-full left-0 right-0 z-[1000] mt-1 bg-white border border-gray-200 rounded-xl shadow-md max-h-96 overflow-y-auto">
+      {isDropdownOpen && dropdownPosition && createPortal(
+        <div
+          className="fixed z-[1000] bg-white border border-gray-200 rounded-xl shadow-md max-h-96 overflow-y-auto"
+          style={{ top: dropdownPosition.top, left: dropdownPosition.left, width: dropdownPosition.width }}
+        >
           {allOptions.length === 0 ? (
             <div className="px-3 py-2 text-gray-500 text-sm">
               {inputValue ? "Aucun résultat" : "Sélectionnez ou créez un élément"}
@@ -144,14 +180,15 @@ export default function TagInput({
                   onClick={() => handleSelectOption(option)}
                   className={`w-full text-left px-3 py-2 hover:bg-blue-50 transition-colors ${
                     index === focusedIndex ? 'bg-blue-50' : ''
-                  } ${option.startsWith(createLabel) ? 'text-green-600 font-medium' : ''}`}
+                  } ${option.startsWith(createLabel) ? 'text-green-600 font-medium' : 'text-slate-900'}`}
                 >
                   {option}
                 </button>
               ))}
             </>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

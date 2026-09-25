@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { instance as createVizInstance } from "@viz-js/viz";
-import { BarChart3, Loader2, Network, RotateCcw, Shuffle } from "lucide-react";
+import { BarChart3, Loader2, RotateCcw, Shuffle } from "lucide-react";
 import { useData } from "../context/DataContext";
 import { Generation } from "../types/familyTree";
 
@@ -456,20 +456,6 @@ export default function FamilyTreePreview() {
 
   return (
     <div className="bg-gradient-to-b from-gray-50 via-white to-gray-50 flex flex-col h-full">
-      <div className="px-6 py-3 min-h-[56px] bg-white flex items-center justify-between gap-4 shadow-sm">
-        <h2 className="text-base font-semibold tracking-tight text-slate-900 flex items-center gap-2 flex-shrink-0 -mt-3">
-          <Network className="w-5 h-5" />
-          Aperçu du graphique
-        </h2>
-
-        {isLoading && (
-          <div className="flex items-center gap-2 text-blue-600 text-sm font-medium">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Génération...
-          </div>
-        )}
-      </div>
-
       <div className="flex-1 bg-white overflow-hidden relative">
         {!dot && (
           <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-center">
@@ -477,6 +463,13 @@ export default function FamilyTreePreview() {
               <BarChart3 className="w-16 h-16 mx-auto mb-4 text-gray-200" />
               <p>Chargement du graphique...</p>
             </div>
+          </div>
+        )}
+
+        {isLoading && (
+          <div className="absolute top-2 left-2 z-10 flex items-center gap-2 bg-white rounded-lg shadow-md px-3 py-1.5 text-blue-600 text-sm font-medium">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Chargement...
           </div>
         )}
 

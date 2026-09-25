@@ -1,7 +1,8 @@
 import { useState } from "react";
 import Modal from "../Modal";
-import { isNameValid, isTitleValid } from "@/utils/FieldChecker";
+import { isNameValid, isTitleValid, isInvisibleRole, validateInvisibleRole } from "@/utils/FieldChecker";
 import { useData } from "@/context/DataContext";
+import HelpTooltip from "../HelpTooltip";
 
 export default function AddPersonModal({ isOpen, onClose, onAdd, defaultName = "", generationIndex }: {
   isOpen: boolean;
@@ -15,6 +16,7 @@ export default function AddPersonModal({ isOpen, onClose, onAdd, defaultName = "
   const { familyData } = useData();
   const [nameError, setNameError] = useState<string | null>(null);
   const [titleError, setTitleError] = useState<string | null>(null);
+  const [titleWarning, setTitleWarning] = useState<string | null>(null);
 
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -27,6 +29,12 @@ export default function AddPersonModal({ isOpen, onClose, onAdd, defaultName = "
       return;
     }
     setTitleError(null);
+    if (isInvisibleRole(trimmedTitle)) {
+      // Une nouvelle personne n'a encore ni parent ni enfant.
+      setTitleWarning(validateInvisibleRole(0, 0).warning ?? null);
+    } else {
+      setTitleWarning(null);
+    }
     if (trimmedName) {
       onAdd(trimmedName, trimmedTitle);
       setName("");
@@ -64,9 +72,19 @@ export default function AddPersonModal({ isOpen, onClose, onAdd, defaultName = "
           {nameError && <p className="text-red-500 text-sm mt-1">{nameError}</p>}
         </div>
         <div className="mb-5">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Rôle (optionnel)
-          </label>
+          <div className="flex items-center mb-1">
+            <label className="text-sm font-medium text-gray-700">
+              Rôle (optionnel)
+            </label>
+            <HelpTooltip>
+              <ul className="list-disc pl-4 space-y-1">
+                <li><span className="font-semibold">Resp</span> : bordure épaisse autour de la personne.</li>
+                <li><span className="font-semibold">Trésorier</span> : bordure moyenne.</li>
+                <li><span className="font-semibold">Invisible</span> : personne invisible dans le graphe, ses parrains/marraines sont relié·e·s directement à ses bizs (si elle en a plusieurs, chaque parrain·e est relié·e à chaque biz).</li>
+                <li><span className="font-semibold">Autre rôle</span> : affiché sous le nom de la personne.</li>
+              </ul>
+            </HelpTooltip>
+          </div>
           <input
             type="text"
             value={title}
@@ -76,14 +94,21 @@ export default function AddPersonModal({ isOpen, onClose, onAdd, defaultName = "
               const { valid, error } = isTitleValid(value);
               if (!valid) {
                 setTitleError(error ?? "Rôle invalide.");
+                setTitleWarning(null);
+                return;
+              }
+              setTitleError(null);
+              if (isInvisibleRole(value)) {
+                setTitleWarning(validateInvisibleRole(0, 0).warning ?? null);
               } else {
-                setTitleError(null);
+                setTitleWarning(null);
               }
             }}
             className={`w-full p-2 pl-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${titleError ? "border-red-500 focus:ring-red-500" : ""}`}
             placeholder="Resp, Trésorier, ..."
           />
           {titleError && <p className="text-red-500 text-sm mt-1">{titleError}</p>}
+          {titleWarning && <p className="text-amber-600 text-sm mt-1">{titleWarning}</p>}
         </div>
         <div className="flex gap-3">
           <button

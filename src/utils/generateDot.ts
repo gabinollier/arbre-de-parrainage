@@ -2,6 +2,7 @@ import { ChildrenTree, FamilyData } from "../types/familyTree";
 import { Person } from "../types/Person";
 import { getFrenchOrdinalName } from "./frenchUtils";
 import { isLightColor } from "./colorUtils";
+import { isInvisibleRole } from "./FieldChecker";
 
 // Color conversion utilities
 function hexToRgb(hexColor: string): [number, number, number] {
@@ -195,6 +196,18 @@ function buildTreesFromGenerations(generations: Person[][]): Person[][][] {
     return trees;
 }
 
+/**
+ * Collects all the visible persons reachable from a person by walking only
+ * through invisible ("Invisible") persons. Used to link each parent directly to
+ * each child, skipping the hidden persons.
+ */
+function collectVisibleDescendants(person: Person): Person[] {
+    if (!person.invisible) {
+        return [person];
+    }
+    return person.children.flatMap(collectVisibleDescendants);
+}
+
 function generateDotFromGenerations(generations: Person[][], firstYear: number, showDebugInfos: boolean = false): string {
     /**
      * Generate DOT script from list of lists of Person objects without using Graphviz library
@@ -321,6 +334,20 @@ function generateDotFromGenerations(generations: Person[][], firstYear: number, 
                         dotLines.push(`\t${quotedPersonId} -> ${quotedChildId} [arrowhead=none style=invisible weight=500]`);
                     }
                     edges.add(edgeKey);
+                }
+
+                // If the child is invisible ("Invisible"), link the parent directly to
+                // every visible descendant, skipping the hidden persons.
+                if (!person.invisible && child.invisible) {
+                    const descendants = collectVisibleDescendants(child);
+                    for (const descendant of descendants) {
+                        const descendantId = `${descendant.name}_${descendant.generation}`;
+                        const directEdgeKey = `${personId}->${descendantId}`;
+                        if (!edges.has(directEdgeKey)) {
+                            dotLines.push(`\t${quotedPersonId} -> ${quoteNodeName(descendantId)} [weight=1000]`);
+                            edges.add(directEdgeKey);
+                        }
+                    }
                 }
             }
         }
@@ -484,7 +511,7 @@ function convertFileDataToClassData(data: ChildrenTree): Person[][] {
         const generation = data[generationIndex];
         for (const personName of Object.keys(generation)) {
             const title = data[generationIndex][personName].title || null;
-            const person = new Person(personName, generationIndex, 0, [], [], title);
+            const person = new Person(personName, generationIndex, 0, [], [], title, isInvisibleRole(title));
             generations[generationIndex].push(person);
         }
     }
@@ -492,11 +519,13 @@ function convertFileDataToClassData(data: ChildrenTree): Person[][] {
     // Add children
     for (const generation of generations) {
         for (const person of generation) {
-            if (person.invisible) {
+            const personData = data[person.generation]?.[person.name];
+            if (!personData) {
+                // Dummy invisible children (created for aesthetics) are not in the data
                 continue;
             }
 
-            const childrenNames = data[person.generation][person.name].children;
+            const childrenNames = personData.children;
             if (person.generation + 1 < generations.length) {
                 const children = generations[person.generation + 1].filter(p => 
                     childrenNames.includes(p.name)

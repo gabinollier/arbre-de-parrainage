@@ -2,9 +2,10 @@ import { FamilyData } from "@/types/familyTree";
 import { Edit3, Trash, UserRound, X } from "lucide-react";
 import TagInput from "./TagInput";
 import { useState } from "react";
-import { isNameValid, isTitleValid } from "@/utils/FieldChecker";
+import { isNameValid, isTitleValid, isInvisibleRole, validateInvisibleRole } from "@/utils/FieldChecker";
 import DeletePersonModal from "./modals/DeletePersonModal";
 import { useData } from "@/context/DataContext";
+import HelpTooltip from "./HelpTooltip";
 
 export default function PersonPanel({ 
   data,
@@ -131,6 +132,7 @@ export default function PersonPanel({
   };
 
   const updatePersonTitle = (title: string) => {
+    setTitleError(null);
     const newData = { ...data };
     const generation = { ...newData.children_tree[generationIndex] };
     generation[personName] = {
@@ -152,22 +154,6 @@ export default function PersonPanel({
     onDataChange(newData);
   };
 
-  const addChild = (childName: string) => {
-    if (person.children.includes(childName)) return;
-    
-    const newData = { ...data };
-    const generation = { ...newData.children_tree[generationIndex] };
-    generation[personName] = {
-      ...person,
-      children: [...person.children, childName]
-    };
-    newData.children_tree[generationIndex] = generation;
-    onDataChange(newData);
-  };
-
-
-
-  // Get available children (next generation)
   const nextGeneration = data.children_tree[generationIndex + 1] || {};
   const availableChildren = Object.keys(nextGeneration).filter(name => 
     !person.children.includes(name)
@@ -183,23 +169,18 @@ export default function PersonPanel({
     !currentParents.includes(name)
   );
 
+  // Avertissement pour le rôle "Invisible", recalculé à chaque rendu pour rester
+  // à jour quand les parrains/marraines ou les bizs sont modifiés.
+  const titleWarning = titleError === null && isInvisibleRole(draftTitle.trim())
+    ? (validateInvisibleRole(currentParents.length, person.children.length).warning ?? null)
+    : null;
+
   const removeParent = (parentName: string) => {
     const newData = { ...data };
     const prevGen = { ...newData.children_tree[generationIndex - 1] };
     prevGen[parentName] = {
       ...prevGen[parentName],
       children: prevGen[parentName].children.filter(child => child !== personName)
-    };
-    newData.children_tree[generationIndex - 1] = prevGen;
-    onDataChange(newData);
-  };
-
-  const addParent = (parentName: string) => {
-    const newData = { ...data };
-    const prevGen = { ...newData.children_tree[generationIndex - 1] };
-    prevGen[parentName] = {
-      ...prevGen[parentName],
-      children: [...prevGen[parentName].children, personName]
     };
     newData.children_tree[generationIndex - 1] = prevGen;
     onDataChange(newData);
@@ -266,9 +247,19 @@ export default function PersonPanel({
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Rôle (optionnel)
-              </label>
+              <div className="flex items-center mb-1">
+                <label className="text-sm font-medium text-gray-700">
+                  Rôle (optionnel)
+                </label>
+                <HelpTooltip>
+                  <p className="mt-1">Certains rôles ont des effets particuliers :</p>
+                  <ul className="list-disc pl-4 mb-1 mt-0.5">
+                    <li><span className="font-semibold">"Resp"</span> : bordure épaisse autour de la personne.</li>
+                    <li><span className="font-semibold">"Invisible"</span> : personne invisible dans le graphe, son parrain/sa marraine est relié·e directement à son/sa biz (ne pas en abuser).</li>
+                    <li><span className="font-semibold">N'importe quel autre rôle</span> : bordure moyenne autour de la personne.</li>
+                  </ul>
+                </HelpTooltip>
+              </div>
               <input
                 type="text"
                 value={draftTitle}
@@ -280,7 +271,6 @@ export default function PersonPanel({
                     setTitleError(error || "Rôle invalide.");
                     return;
                   }
-                  setTitleError(null);
                   updatePersonTitle(value);
                 }}
                 className={`w-full p-2 pl-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${titleError ? 'border-red-500 focus:ring-red-500' : ''}`}
@@ -289,6 +279,11 @@ export default function PersonPanel({
               {titleError && (
                 <p className="text-xs text-red-600 mt-1">
                   {titleError}
+                </p>
+              )}
+              {titleWarning && (
+                <p className="text-xs text-amber-600 mt-1">
+                  {titleWarning}
                 </p>
               )}
             </div>
@@ -317,7 +312,7 @@ export default function PersonPanel({
                 }}
                 onRemoveTag={removeParent}
                 onSelectTag={(parentName) => onSelectPerson(generationIndex - 1, parentName)}
-                placeholder="Ajouter un parrain..."
+                placeholder="Ajouter un parrain/une marraine..."
                 createLabel="Créer"
               />
             </div>

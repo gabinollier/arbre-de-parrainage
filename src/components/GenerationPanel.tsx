@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Generation, PersonData } from "@/types/familyTree";
 import { ChevronRight, Plus, Search, TextAlignStart, Trash, UsersRound, X } from "lucide-react";
 
@@ -18,10 +18,16 @@ export default function GenerationMembersPanel({
   onDeleteGeneration: (generationIndex: number) => void;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setSearchQuery("");
   }, [generationIndex]);
+
+  // Remonte tout en haut de la liste à chaque modification de la recherche
+  useEffect(() => {
+    listRef.current?.scrollTo({ top: 0 });
+  }, [searchQuery]);
 
   const members = useMemo<[string, PersonData][]>(() => {
     if (!generation) {
@@ -122,7 +128,7 @@ export default function GenerationMembersPanel({
         </div>
       </div>
       
-      <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-3">
+      <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-3" ref={listRef}>
         {orderedMembers.map(({ name, person, matches }) => {
           const isSelected = selectedPerson === name;
           const unmatchedClasses = matches
@@ -146,9 +152,14 @@ export default function GenerationMembersPanel({
               <div className="flex flex-row items-center gap-3 justify-between flex-1">
                 <div className={`font-semibold ${isSelected ? "text-white" : matches ? "text-gray-900" : "text-gray-500"}`}>{name}</div>
                 <div className={`text-xs ${isSelected ? "text-white/80" : matches ? "text-gray-500" : "text-gray-400"}`}>
-                  {person.title && <span>{person.title} • </span>}
-                  {person.children.length > 0 && `${person.children.length} enfant${person.children.length !== 1 ? "s" : ""}`}
-                </div>
+                    {[
+                      person.title,
+                      person.children.length > 0 &&
+                        `${person.children.length} enfant${person.children.length !== 1 ? "s" : ""}`,
+                    ]
+                      .filter(Boolean)
+                      .join(" • ")}
+                  </div>
               </div>
               <ChevronRight className={`w-4 h-4 flex-shrink-0 ${isSelected ? "text-white/80" : "text-gray-400"}`} />
             </button>
