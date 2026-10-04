@@ -135,17 +135,19 @@ function HomeContent() {
           </div>
         </div>
       )}
-      <footer className="flex-shrink-0 py-3 flex items-center justify-center">
-        <a
-          href="https://github.com/gabinollier/arbre-de-parrainage"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
-        >
-          <Github className="w-3.5 h-3.5" />
-          <span>Code source sur GitHub</span>
-        </a>
-      </footer>
+      {!familyData && (
+        <footer className="flex-shrink-0 py-3 flex items-center justify-center">
+          <a
+            href="https://github.com/gabinollier/arbre-de-parrainage"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <Github className="w-3.5 h-3.5" />
+            <span>Code source sur GitHub</span>
+          </a>
+        </footer>
+      )}
     </div>
   );
 }
